@@ -112,14 +112,28 @@ FCCAnalyses. `PythiaInterface` reads a `.cmd` card, which can point at an
 external LHE file exactly like the working example shipped in `k4Gen` itself
 ([`data/Pythia_LHEinput.cmd`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/data/Pythia_LHEinput.cmd)).
 
-[`mumuH_Hbb.cmd`](mumuH_Hbb.cmd) in this directory combines that LHE-reading
-pattern with the H -> b b decay-forcing settings from
-[`FCC-config`'s `p8_ee_H_Hbb_ecm125.cmd`](https://github.com/HEP-FCC/FCC-config/blob/main/FCCee/Generator/Pythia8/p8_ee_H_Hbb_ecm125.cmd):
+[`mumuH_Hbb.cmd`](mumuH_Hbb.cmd) in this directory is based on
+[`FCC-config`'s `p8_ee_default.cmd`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Pythia8/p8_ee_default.cmd)
+(`winter2023` branch) — the actual card FCC-config uses to read WHIZARD LHE
+output into Pythia8 — with H -> b b decay-forcing added on top. Note
+`PartonLevel:ISR/FSR = off`: WHIZARD's `isr_handler` in Step 1 already
+generated the initial-state radiation, so leaving Pythia8's own parton-level
+ISR/FSR on would double-count it:
 
 ```
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
 Beams:LHEF = mumuH.lhe
+Beams:setProductionScalesFromLHEF = off
+Beams:allowMomentumSpread = off
+
+! ISR/FSR already handled by WHIZARD's isr_handler in Step 1 - keep off here
+! to avoid double-counting radiation in Pythia8's parton-level shower
+PartonLevel:ISR = off
+PartonLevel:FSR = off
+
+Check:epTolErr = 1e-1
+LesHouches:matchInOut = off
 
 ! Force H -> b b
 25:onMode  = off
@@ -131,10 +145,15 @@ own
 [`options/pythia.py`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/options/pythia.py)
 example — swap in the LHE-reading card above and write out EDM4hep rather
 than plain HepMC (`HepMCFileWriter`'s own docstring says it's for debugging,
-not for actual event storage):
+not for actual event storage). Beamspot vertex/time smearing is done here,
+via the Gaudi `GaussSmearVertex` tool wired into `GenAlg`, using the same
+FCC-ee IDEA beamspot values as `p8_ee_default.cmd`'s `Beams:sigmaVertex*`
+settings — not via Pythia8's own `Beams:allowVertexSpread`, which would
+apply it a second time on top of this:
 
 ```python
 from Gaudi.Configuration import *
+from GaudiKernel import SystemOfUnits as units
 from edm4hep import labels as e4_labels
 
 from Configurables import EventDataSvc
@@ -143,6 +162,17 @@ ApplicationMgr().EvtSel = 'NONE'
 ApplicationMgr().EvtMax = 1000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
+# Beamspot vertex/time smearing (FCC-ee IDEA values, from FCC-config's
+# p8_ee_default.cmd Beams:sigmaVertex{X,Y,Z}/sigmaTime). Done here via the
+# Gaudi VertexSmearingTool rather than Pythia8's own Beams:allowVertexSpread,
+# so it isn't applied twice.
+from Configurables import GaussSmearVertex
+smeartool = GaussSmearVertex()
+smeartool.xVertexSigma = 5.96e-3 * units.mm
+smeartool.yVertexSigma = 23.8e-6 * units.mm
+smeartool.zVertexSigma = 0.397 * units.mm
+smeartool.tVertexSigma = 10.89 * units.mm
+
 from Configurables import PythiaInterface
 pythia8gentool = PythiaInterface()
 pythia8gentool.pythiacard = "mumuH_Hbb.cmd"
@@ -150,6 +180,7 @@ pythia8gentool.pythiacard = "mumuH_Hbb.cmd"
 from Configurables import GenAlg
 pythia8gen = GenAlg("Pythia8")
 pythia8gen.SignalProvider = pythia8gentool
+pythia8gen.VertexSmearingTool = smeartool
 pythia8gen.hepmc.Path = "hepmc"
 ApplicationMgr().TopAlg += [pythia8gen]
 
@@ -185,6 +216,33 @@ hadronized, H -> b b decayed event record.
 > only way in. So `Sim/ee` should use `k4SimDelphesAlg` via `k4run`, reading
 > the `MCParticles` collection from `mumuH_Hbb.root` produced here — the
 > Gen/Sim split as designed is correct.
+
+## Open TODOs
+
+The golden card's internal PYTHIA6 shower/hadronization step
+(`$ps_PYTHIA_PYGIVE` in
+[`wzp6_ee_mumuH_Hbb_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_Hbb_ecm240.sin))
+sets several physics parameters that have **not** been ported to
+`mumuH_Hbb.cmd`, because PYTHIA6 parameter names don't map mechanically onto
+Pythia8 settings and doing this properly needs someone to work out the
+correct Pythia8-native equivalents (or confirm Pythia8 defaults are close
+enough for a teaching sample):
+
+- **Higgs mass and width** — the golden card sets `PMAS(25,1)=125.` and
+  `PMAS(25,2)=0.4143E-02` (4.143 MeV) explicitly. `mumuH_Hbb.cmd` doesn't
+  set `25:m0` / `25:mWidth`, so Pythia8's own defaults apply instead.
+- **Hadronization / fragmentation tune** — the golden card carries a full
+  set of Lund string parameters (`PARJ(1,2,3,4,11-17,21,41,42,54,55)`,
+  `MSTJ(11)`, `MSTP(3)`). None of this has been translated into a Pythia8
+  tune; Pythia8 defaults are used instead.
+- **Bose-Einstein correlations** — the golden card turns these on with a
+  specific tune (`MSTP(151)=1`, `PARP(151-154)`). Not enabled in
+  `mumuH_Hbb.cmd` (off by Pythia8 default).
+- **Long-lived particle stability treatment** — the golden card sets
+  `MSTJ(22)=4` with `PARJ(73)=2250`, `PARJ(74)=2500`, controlling which
+  particles get left stable (for the detector to handle) based on decay
+  length. Not addressed in `mumuH_Hbb.cmd`; this could matter for how
+  Delphes sees long-lived particles like K_S/Lambda downstream.
 
 ## What's next
 
