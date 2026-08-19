@@ -205,6 +205,35 @@ k4run pythia_mumuH.py
 This produces `mumuH_Hbb.root`, an EDM4hep file with the showered,
 hadronized, H -> b b decayed event record.
 
+> **Status: Step 2 currently crashes — do not treat as working yet.**
+> Actually ran the full chain against the real Key4hep stack
+> (`/cvmfs/sw.hsf.org/key4hep/setup.sh`, WHIZARD 3.1.5, Pythia8 8.315).
+> Step 1 works: `whizard mumuH.sin` runs cleanly and gives
+> sigma ~6.8 fb, matching the known sigma(ee->ZH)*BR(Z->mumu) ~ 200 fb *
+> 3.37% ~ 6.7 fb at 240 GeV. Step 2 (`k4run pythia_mumuH.py`) crashes on
+> the first event with:
+> ```
+> Pythia8              FATAL Standard std::exception is caught in sysExecute
+> Pythia8              ERROR vector::_M_range_check: __n (which is 9) >= this->size() (which is 9)
+> ```
+> A `gdb` backtrace (`catch throw`) traces this to
+> `Pythia8::PartonLevel::resonanceShowers()` ->
+> `Pythia8::Particle::iBotCopyId()`, i.e. inside Pythia8's own machinery for
+> decaying+showering a resonance (the Higgs) found mid-event, thrown while
+> walking a daughter-index chain that runs past the end of the
+> not-yet-fully-built event record.
+>
+> Ruled out (still crashes identically with each of these changed, alone or
+> combined): `PartonLevel:FSR` on vs off, `LesHouches:matchInOut` on vs off,
+> `PartonLevel:earlyResDec = on`, WHIZARD's `?keep_beams` true vs false,
+> LHEF version 2.0 vs 3.0, and stripping WHIZARD's `<weights>`
+> `sqme_prc` block from the LHE file. The crash appears to be specifically
+> about Pythia8 decaying+showering a *bare, undecayed resonance* (H) that
+> arrives alone in an LHE event with no other colored partons — needs
+> either a working combination of Pythia8 settings we haven't found yet, a
+> different Pythia8 version, or input from someone with deeper Pythia8
+> internals experience.
+
 > **Confirmed handoff to `Sim/ee`:** this stage hands off an EDM4hep ROOT
 > file with an `MCParticles` collection, not a HepMC file and not a combined
 > Pythia8+Delphes run. Checked `key4hep/k4SimDelphes`: its Gaudi component
@@ -218,6 +247,34 @@ hadronized, H -> b b decayed event record.
 > Gen/Sim split as designed is correct.
 
 ## Open TODOs
+
+- **Blocking: Step 2 crashes when actually run** — see the "Status" callout
+  above. `k4run pythia_mumuH.py` throws inside Pythia8's own
+  `resonanceShowers`/`iBotCopyId` machinery on the first event; several
+  plausible fixes were tried and ruled out. Needs resolving before this
+  tutorial step can be called working.
+- **Background samples** — undecided whether this tutorial includes any
+  background processes alongside the mumuH signal, and if so how they'd be
+  generated. One tentative idea floated: generate backgrounds with pure
+  Pythia8 (no WHIZARD step), since Pythia8 alone can produce e.g. generic
+  qqbar/WW/ZZ final states without needing WHIZARD's matrix-element
+  machinery. Not decided or attempted.
+- **Jupyter notebook export** — Jupyter itself was ruled out as the primary
+  authoring format (too complicated with FCCAnalyses, per planning notes),
+  but a one-way export of this markdown material to `.ipynb` (e.g. via
+  [`jupytext`](https://jupytext.readthedocs.io/)) could still be useful for
+  students who'd rather work in a notebook. Not attempted — would need some
+  markup convention to mark which fenced code blocks are meant to be
+  executable Python cells versus illustrative shell/Sindarin/Pythia8-card
+  snippets, since jupytext doesn't know the difference on its own.
+- **Syntax highlighting for WHIZARD/Pythia8 files** — neither WHIZARD's
+  Sindarin (`.sin`) format nor Pythia8's `.cmd` cards have a grammar in
+  GitHub's Linguist (so no fenced-code-block language tag lights them up on
+  GitHub) or an existing VSCodium/VSCode extension. Writing a small custom
+  TextMate grammar for one or both (packaged as a minimal VSCodium
+  extension, or bundled in this repo) would fix local editing at least;
+  GitHub rendering would still fall back to a closest-fit generic tag (e.g.
+  `ini`-ish for the Pythia8 cards) or plain text. Not started.
 
 The golden card's internal PYTHIA6 shower/hadronization step
 (`$ps_PYTHIA_PYGIVE` in

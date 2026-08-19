@@ -36,9 +36,9 @@ Analysis/
 ## Format
 
 Each section is introduced with brief slides, then students work through the
-markdown material directly in this repo (VSCode + extensions recommended for an
-all-in-one setup). Students present their solutions; reference solutions are
-also provided here for offline use.
+markdown material directly in this repo (VSCodium + extensions recommended
+for an all-in-one setup). Students present their solutions; reference
+solutions are also provided here for offline use.
 
 ## Branches
 
