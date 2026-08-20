@@ -9,10 +9,11 @@ Beams:LHEF = mumuH.lhe
 Beams:setProductionScalesFromLHEF = off
 Beams:allowMomentumSpread = off
 
-! ISR/FSR already handled by WHIZARD's isr_handler in Step 1 - keep off here
-! to avoid double-counting radiation in Pythia8's parton-level shower
+! ISR already handled by WHIZARD's isr_handler in Step 1 - keep off here to
+! avoid double-counting radiation. FSR stays on (Pythia8 default): it's what
+! actually showers the H -> b b decay products before hadronization - with
+! it off, b/bbar go straight into string fragmentation with zero shower.
 PartonLevel:ISR = off
-PartonLevel:FSR = off
 
 Check:epTolErr = 1e-1
 LesHouches:matchInOut = off

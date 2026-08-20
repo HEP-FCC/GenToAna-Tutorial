@@ -6,8 +6,6 @@ sqrts = 240 GeV
 process mumuH = e1, E1 => e2, E2, H
 
 beams = e1, E1 => gaussian => isr
-?keep_beams    = true
-?keep_remnants = true
 
 gaussian_spread1 = 0.185%
 gaussian_spread2 = 0.185%
