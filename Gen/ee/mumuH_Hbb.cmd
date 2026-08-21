@@ -21,3 +21,11 @@ LesHouches:matchInOut = off
 ! Force H -> b b
 25:onMode  = off
 25:onIfAny = 5
+
+! No extra long-lived-particle or Bose-Einstein settings here - see
+! Gen/ee/README.md's Open TODOs for why: the golden card's MSTJ(22)=4 is
+! a geometric (detector-cylinder) decay-vertex cutoff, not a proper-
+! lifetime one, and Pythia8's default (off) already matches its practical
+! outcome for K_S0/Lambda at these energies. Bose-Einstein correlations
+! (golden card's MSTP(151)=1) deliberately left off too - see the same
+! section for why.

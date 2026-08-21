@@ -154,6 +154,9 @@ LesHouches:matchInOut = off
 ! Force H -> b b
 25:onMode  = off
 25:onIfAny = 5
+
+! No extra long-lived-particle or Bose-Einstein settings here - see the
+! Open TODOs section below for why.
 ```
 
 `p8_ee_default.cmd` itself sets `PartonLevel:FSR = off` too — appropriate
@@ -376,27 +379,87 @@ hadronized, H -> b b decayed event record.
 The golden card's internal PYTHIA6 shower/hadronization step
 (`$ps_PYTHIA_PYGIVE` in
 [`wzp6_ee_mumuH_Hbb_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_Hbb_ecm240.sin))
-sets several physics parameters that have **not** been ported to
-`mumuH_Hbb.cmd`, because PYTHIA6 parameter names don't map mechanically onto
-Pythia8 settings and doing this properly needs someone to work out the
-correct Pythia8-native equivalents (or confirm Pythia8 defaults are close
-enough for a teaching sample):
+sets several physics parameters. Rather than trying to port PYTHIA6's exact
+tuned numbers onto Pythia8 (risky — PYTHIA6 and Pythia8 don't always define
+equivalent-sounding parameters the same way, and getting this wrong would be
+worse than just using Pythia8's own tune), the resolution here was to match
+which *features* the golden card had enabled, using Pythia8's own default
+values for how each behaves. Checked against Pythia8's manual (version-
+matched to the actual stack) parameter by parameter:
 
-- **Higgs mass and width** — the golden card sets `PMAS(25,1)=125.` and
-  `PMAS(25,2)=0.4143E-02` (4.143 MeV) explicitly. `mumuH_Hbb.cmd` doesn't
-  set `25:m0` / `25:mWidth`, so Pythia8's own defaults apply instead.
-- **Hadronization / fragmentation tune** — the golden card carries a full
-  set of Lund string parameters (`PARJ(1,2,3,4,11-17,21,41,42,54,55)`,
-  `MSTJ(11)`, `MSTP(3)`). None of this has been translated into a Pythia8
-  tune; Pythia8 defaults are used instead.
-- **Bose-Einstein correlations** — the golden card turns these on with a
-  specific tune (`MSTP(151)=1`, `PARP(151-154)`). Not enabled in
-  `mumuH_Hbb.cmd` (off by Pythia8 default).
-- **Long-lived particle stability treatment** — the golden card sets
-  `MSTJ(22)=4` with `PARJ(73)=2250`, `PARJ(74)=2500`, controlling which
-  particles get left stable (for the detector to handle) based on decay
-  length. Not addressed in `mumuH_Hbb.cmd`; this could matter for how
-  Delphes sees long-lived particles like K_S/Lambda downstream.
+- **Bose-Einstein correlations** (`MSTP(151)=1`, `PARP(151-154)`) —
+  deliberately left off (Pythia8 default), after checking whether it
+  actually matters for this tutorial's two measurements: it doesn't touch
+  muons at all (only identical-boson pairs like pi/K), so the mu mu
+  recoil mass is completely unaffected; for the H -> b b dijet mass it
+  would only be a small within-jet momentum redistribution, since the
+  algorithm is explicitly designed to conserve overall jet 4-momentum
+  (per Pythia8's own manual). Checked it doesn't introduce a higher event
+  failure rate either (1000/1000 events succeed with it on, same as off).
+  Not worth the added complexity for what it buys here — if this
+  changes (e.g. this tutorial ever adds a jet-substructure exercise), it
+  can be turned on via `HadronLevel:BoseEinstein = on`, leaving
+  `BoseEinstein:lambda`/`QRef` at Pythia8 defaults (PYTHIA6's
+  `PARP(151-154)` is a 4-parameter tune and Pythia8's is only 3, so the
+  golden card's specific numbers were never going to be portable anyway).
+- **Long-lived particle stability** (`MSTJ(22)=4`, `PARJ(73)=2250`,
+  `PARJ(74)=2500`) — **left off (Pythia8 default), corrected after an
+  earlier wrong attempt at this.** First pass mapped this to
+  `ParticleDecays:limitTau0 = on` (a pure proper-lifetime/ctau cutoff),
+  reasoning it was a lifetime threshold like PYTHIA6's `PARJ(71)`-based
+  `MSTJ(22)=2` option. That was the wrong PYTHIA6 option: checked the
+  actual PYTHIA 6.4 manual, and `MSTJ(22)=4` is a **geometric** cutoff —
+  "a particle is decayed only if the decay vertex is within a cylindrical
+  volume with radius `PARJ(73)` ... and extent to `±PARJ(74)`" — i.e.
+  decay-vertex *position* (momentum-dependent), not proper lifetime at
+  all. The correct Pythia8 equivalent is `ParticleDecays:limitCylinder`
+  (`xyMax`/`zMax`), not `limitTau0`. Checked the practical difference on
+  real generated events (500-event sample): with the wrong `limitTau0 =
+  on` setting, 100% of K_S0/Lambda came out *stable*; with it left off
+  (Pythia8 default), 100% come out *decayed* — matching what the golden
+  card's actual cylinder cutoff does in practice, since at these energies
+  essentially every K_S0/Lambda decays well inside the golden card's
+  ~2.25m/2.5m volume anyway. So the fix was to remove the setting
+  entirely, not port a different one — Pythia8's own default already
+  matches the golden card's practical behavior for this tutorial's
+  particle content.
+- **Fragmentation function for b/c quarks** (`MSTJ(11)=3`, PYTHIA6's
+  "Bowler" option) — **no change needed**: Pythia8's manual states
+  outright that "for massive quarks..., the Bowler modification to the
+  Lund FF is the default choice." So this golden-card setting is already
+  Pythia8's default behavior with zero configuration.
+- **Higgs mass and width** (`PMAS(25,1)=125.`, `PMAS(25,2)=0.4143E-02`,
+  i.e. 4.143 MeV) — no change: Pythia8's own default (125.0 GeV,
+  4.08 MeV width) already matches closely.
+- **Lund `a`/`b`/`sigma` and diquark/meson-multiplet tune**
+  (`PARJ(1,2,3,4,11-17,21,41,42)`, `MSTP(3)`) — no change: these are
+  baseline numeric tuning knobs Pythia8 always applies some value for
+  (`StringZ:aLund`/`bLund`, `StringPT:sigma`, `StringFlav:...`), not
+  on/off features to toggle, so under this approach they're left at
+  Pythia8's own defaults rather than guessing at cross-code equivalence.
+  As a sanity check on how different the actual numbers are: the golden
+  card's `PARJ(41)/(42)` (Lund a/b = 0.11/0.52) versus Pythia8's defaults
+  (`aLund`/`bLund` = 0.68/0.98) differ substantially — a real tune
+  difference, not a rounding one, which is exactly why these weren't
+  guessed at.
+- **`MSTJ(28)=0`** (disables PYTHIA6's own tau decay, deferring to an
+  external tool like TAUOLA for correct tau spin/polarization
+  correlations) — checked, and it's not as inapplicable as first assumed:
+  taus do appear in this chain, not from the H -> b b decay itself, but
+  from semitauonic B-hadron decays (B -> D(*) tau nu, a real ~2-3%-per-B
+  branching fraction) after the b/bbar hadronize - confirmed empirically,
+  ~8.5% of a 200-event sample had at least one tau. TAUOLA's value is
+  correct tau polarization for analyses where tau decay kinematics *are*
+  the observable (e.g. Z/H -> tau tau); here the taus are secondary,
+  buried inside b-jets, and nothing in this tutorial's analysis (mu mu
+  recoil mass, H -> b b dijet mass) is sensitive to tau polarization, so
+  Pythia8's own native tau decay treatment should be adequate without
+  TAUOLA. If more precise B-hadron decay modeling ever mattered, there's
+  an available upgrade path already in this pipeline:
+  `PythiaInterface`'s `doEvtGenDecays` option (currently unset/off,
+  see `pythia_mumuH.py`) would route B-hadron decays through EvtGen
+  instead of Pythia8's simpler built-in table, improving tau kinematics
+  as a side effect too. Not enabled here.
 
 ## What's next
 
