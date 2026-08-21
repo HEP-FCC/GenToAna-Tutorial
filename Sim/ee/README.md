@@ -1,19 +1,27 @@
 # Sim - FCC-ee
+<!-- source /cvmfs/sw.hsf.org/key4hep/setup.sh -->
 
 <!-- Delphes fast simulation using the IDEA card, run on the Pythia-showered
 HEPMC output from `Gen/ee`. -->
 
-In this part of the tutorial you will learn how to use the common `key4hep` tools for fast, parametrized detector simulation with `Delphes`. 
-We will use the IDEA detector concept and run on the $ZH$ production events at FCC-ee that you learned how to generate in the previous step. The input files used here are therefore the HEPMC (TO BE CONFIRMED) files you produced, and the output will be `EDM4HEP` reconstruction-level events. You will get an overview of how the parametrized detector response simulation works, as well as of the `EDM4HEP` event data model. 
-
+In this part of the tutorial you will learn how to use the common `key4hep` tools for fast, parametrized detector simulation with `Delphes`. ADD LINKS TO MATCHING DOC!
+We will use the IDEA detector concept and run on the $ZH$ production events at FCC-ee that you learned how to generate in the previous step. The input files to the simulation are the events after showering and Higgs decay at generation level that you produced, and the output file will contain the same events on reconstruction level. Both files are in `EDM4HEP` format. You will get an overview of how the parametrized detector response simulation works, as well as of the `EDM4HEP` event data model. 
 
 Finally, we will make some simple plots from the `EDM4HEP` we produced. (DO WE KEEP THIS?)
 
-# Fast simulation with k4SimDelphes starting from existing HEPMC files
+## Running the Delphes fast simulation with Gaudi
 
-Check if you have setup the software stack and the `DelphesPythia8_EDM4HEP` executable is available, by running `which DelphesPythia8_EDM4HEP`. If this doesn't return a path like `/cvmfs/sw.hsf.org/key4hep/<somewhere>/DelphesPythia8_EDM4HEP` please follow the instructions (LINK TO BE ADDED)
+Check if you have setup the software stack and the `k4run` executable is available, by running `which k4run`. If this doesn't return a path like `/cvmfs/sw.hsf.org/key4hep/<somewhere>/k4run` please follow the instructions for setting up again (LINK TO BE ADDED).
 
-For the usecase of running Delphes fast simulation to produce `EDM4HEP` files, we only need this executable. But you can check which other Delphes utilities are available in your installation by just using the autocomplete functionality, i.e. typing `Delphes` <tab><tab> - this will show you the whole list. They all interface different modules and run with different input/output formats - the names should give you a clue which ones exactly. As mentioned already `DelphesPythia8_EDM4HEP` interfaces `Delphes` and `Pythia8` and outputs `EDM4HEP` files, rather than using the `Delphes` output file format. Another example is `DelphesSTDHEP_EDM4HEP` which uses `STDHEP` as input file format. Here you can really see the strength of having a common software ecosystem like `key4hep` - the same utility is offered for many specific usecases. 
+We will again be using the `Gaudi` approach you learned in the previous part of the tutorial, so we need a steering file to tell it that we want to run Delphes and with which settings. 
+
+A skeleton of such a steering file is provided in `delphes_mumuH_IDEA.py`. You can already take a look into it and try to understand which information we need to fill in in order to make this work. Remember you can use `k4run delphes_mumuH_IDEA.py --help` to get a more detailed description of the config parameters. 
+
+## Understanding edm4hep datamodel collections
+
+## Understanding the Delphes parametrization 
+
+<!-- For the usecase of running Delphes fast simulation to produce `EDM4HEP` files, we only need this executable. But you can check which other Delphes utilities are available in your installation by just using the autocomplete functionality, i.e. typing `Delphes` <tab><tab> - this will show you the whole list. They all interface different modules and run with different input/output formats - the names should give you a clue which ones exactly. As mentioned already `DelphesPythia8_EDM4HEP` interfaces `Delphes` and `Pythia8` and outputs `EDM4HEP` files, rather than using the `Delphes` output file format. Another example is `DelphesSTDHEP_EDM4HEP` which uses `STDHEP` as input file format. Here you can really see the strength of having a common software ecosystem like `key4hep` - the same utility is offered for many specific usecases. 
 
 We can check how to actually run the exectuable in question with the help option, for example:
 
@@ -27,9 +35,9 @@ config_file - configuration file in Tcl format,
 output_config_file - configuration file steering the content of the edm4hep output in Tcl format,
 pythia_card - Pythia8 configuration file,
 output_file - output file in ROOT format.
-```
+``` -->
 
-telling us which input arguments it expects. Let's go through them:
+<!-- telling us which input arguments it expects. Let's go through them: -->
 
 - The `config_file`: This is our Delphes card, which contains the parametrisations of the resolutions and efficiencies for a specific detector concept. We will use the baseline FCC-ee IDEA detector card. It comes pre-installed with the `key4hep` software stack, and you can find the main card under: `$DELPHES_DIR/cards/delphes_card_IDEA.tcl`
 There are many other cards, for different (future) colliders and detectors in `$DELPHES_DIR/cards/`, which you can also view in your browser on [on github](https://github.com/delphes/delphes/tree/master/cards). 
