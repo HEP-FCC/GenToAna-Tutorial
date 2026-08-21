@@ -21,63 +21,49 @@ Let us walk-through together the different parameters we have to set in the stee
 
 For the input section we have:
 - `podioevent.input` sets the path of the input files, so fill in the location of your output file from the previous step here. 
-- `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the the generator level particles written out py `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. 
+- `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the generator level particles written out py `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. 
 
-Next, we load and configure the Delphes algorithm we want to run. In particular we use `k4SimDelphesAlg`, this is an implementation of Delphes in the key4hep environment that directly converts the output to `EDM4HEP`. If you are interested, you can find more information about it <HERE> (ADD SOME LINKS TO SOURCE CODE OR DOC?). In terms of settings to fill in we have here:
+Next, we load and configure the Delphes algorithm we want to run. In particular we use `k4SimDelphes`, this is an implementation of Delphes in the key4hep environment that directly converts the output to `EDM4HEP`. If you are interested, you can find more information about it <HERE> (ADD SOME LINKS TO SOURCE CODE OR DOC?). In terms of settings to fill in we have here:
 - `delphesalg.DelphesCard` specifies which Delphes card we want to use. A Delphes card is a plain-text `(.tcl)` configuration file that defines a specific detector's parametrized response — its geometry, resolutions, and reconstruction efficiencies. Because that parametrization lives entirely in the card, swapping in a different one lets you simulate a different detector from the same generator-level input easily, which is the real strength of the fast-sim approach. We will use the baseline FCC-ee IDEA detector card. It comes pre-installed with the `key4hep` software stack, and you can find the main card under: `$DELPHES_DIR/cards/delphes_card_IDEA.tcl`
 There are many other cards, for different (future) colliders and detectors in `$DELPHES_DIR/cards/`, which you can also view in your browser on [on github](https://github.com/delphes/delphes/tree/master/cards). 
 - `delphesalg.DelphesOutputSettings` here we need to set the path to another config file defining which collections we want to store in our output `EDM4HEP` output file and what their names are. You can use the `edm4hep_IDEA.tcl` baseline configuration provided in this directory. 
 - `delphesalg.GenParticles.Path` tells Delphes what the collection of generator level particles to send through the detector response simulation is, use the same name here as for the input collection. 
 
 Finally, we define the following for our output: 
-- `out.filename` is simply the name of your output file, set it to something that seems logical to you, for example `events_mumuH_Hbb_Delphes_IDEA.edm4hep.root`. 
+- `out.filename` is simply the name of your output file, you can pick it freely but remember to explicitly include the `.root` file format ending.
 
-## Understanding edm4hep datamodel collections
-
-## Understanding the Delphes parametrization 
-
-<!-- For the usecase of running Delphes fast simulation to produce `EDM4HEP` files, we only need this executable. But you can check which other Delphes utilities are available in your installation by just using the autocomplete functionality, i.e. typing `Delphes` <tab><tab> - this will show you the whole list. They all interface different modules and run with different input/output formats - the names should give you a clue which ones exactly. As mentioned already `DelphesPythia8_EDM4HEP` interfaces `Delphes` and `Pythia8` and outputs `EDM4HEP` files, rather than using the `Delphes` output file format. Another example is `DelphesSTDHEP_EDM4HEP` which uses `STDHEP` as input file format. Here you can really see the strength of having a common software ecosystem like `key4hep` - the same utility is offered for many specific usecases. 
-
-We can check how to actually run the exectuable in question with the help option, for example:
-
-`DelphesPythia8_EDM4HEP -h`
-
-returns
-
-```
-Usage: DelphesPythia8config_file output_config_file pythia_card output_file
-config_file - configuration file in Tcl format,
-output_config_file - configuration file steering the content of the edm4hep output in Tcl format,
-pythia_card - Pythia8 configuration file,
-output_file - output file in ROOT format.
-``` -->
-
-<!-- telling us which input arguments it expects. Let's go through them: -->
-
-
-- The `output_config_file` file: This file  We will use the standard version which comes with the software stack installation as `$K4SIMDELPHES/edm4hep_output_config.tcl`. 
-
-- The `pythia_card`: As the name says, this is the configuration card for `Pythia`. Here we use the one provided as `PythiaCard/tester_pwp8_pp_hh_5f_hhbbyy.cmd`. It tells `Pythia` to run over the di-Higgs LHE file provided (`LHEInput/lhe_tester_ggHH.lhe`).  #TO UPDATE!
-
-- The `output_file`: This is simply the name of the output file that will be produced, you can pick it freely but remember to explicitly include the `.root` file format ending.
-
-Task: Run the event simulation using the cards and inputs as described above. 
+**Task: Complete the steering file and run the Delphes fast simulation with the IDEA detector parametrization.**
 
 <details>
   <summary>Solution</summary>
 
-  COMMAND TO BE FIGURED OUT
+  ```k4run solutions/delphes_IDEA_mumuH_allColl.py```
   
 </details>
 
-You should see `Pythia` starting up and summarizing its settings, for example: 
+You should see `Delphes` starting up and summarizing its setup, for example: 
 
-TO BE ADDED
+```
+[....] 
+** INFO: adding module        TruthVertexFinder        TruthVertexFinder        
+** INFO: adding module        ParticlePropagator       ParticlePropagator       
+** INFO: adding module        Efficiency               ChargedHadronTrackingEfficiency
+** INFO: adding module        Efficiency               ElectronTrackingEfficiency
+** INFO: adding module        Efficiency               MuonTrackingEfficiency   
+** INFO: adding module        Merger                   TrackMergerPre           
+** INFO: adding module        TrackCovariance          TrackSmearing  
+[....]          
+```
 
-Then it will process 10 events, which should be quick. Let's first take a step back to understand what we processed here exactly.
+It will then process the 10k events you produced, which will take a few minutes. While it runs, you can read ahead into the next part where we take a step back to understand what we are processing here exactly.
 
-SECTION ABOUT WHAT WE HAVE IN THE PYTHIA CARD HERE NOW TO BE ADDED?
-
+## Understanding the Delphes parametrization 
 Next, lets look at the `Delphes` card to see how the fast simulation works. For the FCC-ee IDEA scenario, we are modelling a detector layout of a vertex detector and drift chamber (inner tracking), followed by dual-readout electromagnetic and hadronic calorimeters, as well as a separate muon system embedded in the return yoke, which provides efficient muon identification and rejection of hadronic fakes. Parametrizations in bins of the pseudorapidity &eta; and the transverse momentum pT are used to model the response across the different regions of the detector. Roughly, the fast simulation proceeds in the following main steps:
 
 - We start from all *stable particles*, as in particles that are written out by `Pythia` as outgoing particles, that do not further decay, at generator level. These are the input to the `ParticlePropagator` module, which propagates them through the magnetic field of the inner trackers. Neutral particles are propagated in a straight line, while charged particles are deflected on a heliocoidal trajectory - in each case the trajectory is modelled upto the point where the particle enters the calorimeter. Here, the magnetic field strength and coverage of the field (= radius of the inner tracker) are user-defined properties, that depend on the detector scenario we want to study. 
+
+## Understanding edm4hep datamodel collections
+
+
+
+
