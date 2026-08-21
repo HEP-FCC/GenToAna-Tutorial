@@ -1,7 +1,6 @@
-! Based on FCC-config's p8_ee_default.cmd (winter2023 campaign), the actual
-! card used to read WHIZARD LHE output into Pythia8, plus H -> b b
-! decay-forcing on top. Vertex/time smearing is done separately in the
-! Gaudi steering script (pythia_mumuH.py), not here.
+! Reads the WHIZARD LHE output from Step 1 and forces H -> b b. Vertex/time
+! smearing is done separately in the Gaudi steering script
+! (pythia_mumuH.py), not here.
 
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
@@ -22,10 +21,6 @@ LesHouches:matchInOut = off
 25:onMode  = off
 25:onIfAny = 5
 
-! No extra long-lived-particle or Bose-Einstein settings here - see
-! Gen/ee/README.md's Open TODOs for why: the golden card's MSTJ(22)=4 is
-! a geometric (detector-cylinder) decay-vertex cutoff, not a proper-
-! lifetime one, and Pythia8's default (off) already matches its practical
-! outcome for K_S0/Lambda at these energies. Bose-Einstein correlations
-! (golden card's MSTP(151)=1) deliberately left off too - see the same
-! section for why.
+! No long-lived-particle or Bose-Einstein settings here - Pythia8's
+! defaults already give the desired behaviour for both; see
+! Gen/ee/README.md's Open TODOs.

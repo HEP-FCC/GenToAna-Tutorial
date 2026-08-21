@@ -24,32 +24,13 @@ Check WHIZARD is available:
 which whizard
 ```
 
-The golden card for this process,
-[`wzp6_ee_mumuH_Hbb_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_Hbb_ecm240.sin),
-lives on the `winter2023` campaign branch of `FCC-config` (each production
-campaign gets its own branch off `main` — the golden card wasn't on `main`
-itself). That card does everything in one go: it showers, hadronizes, and
-forces H -> b b internally through WHIZARD's built-in interface to the
-*legacy* PYTHIA6, and writes `stdhep`. That's how production samples are
-actually made, but it skips the explicit, separate Pythia8 step this
-tutorial wants students to see and configure themselves.
+WHIZARD has no complete, supported interface to Pythia8 — only to the
+legacy PYTHIA6. So this step only generates the hard process and writes it
+out as LHEf; showering, hadronization, and the H -> b b decay all happen as
+an explicit separate step in Pythia8 (Step 2 below), rather than inside
+WHIZARD itself.
 
-> WHIZARD *can* be linked against PYTHIA8 at build time
-> (`--enable-pythia8`), but as of the current WHIZARD manual (covering up
-> to v3.4.3) that integration isn't finished: the "Parton shower and
-> hadronization from PYTHIA8" manual section is an empty stub, and the
-> documented values for `$shower_method` are only `"WHIZARD"` (in-house)
-> and `"PYTHIA6"` — `"PYTHIA8"` isn't one of them. So showering with
-> Pythia8 as a separate step (Step 2 below) isn't just the pedagogically
-> cleaner choice, it's the only well-supported way to bring Pythia8 into
-> this chain at all.
-
-So `mumuH.sin` below keeps the golden card's physics (process, energy, beam
-spread and ISR settings) but strips the internal shower/hadronization/decay
-lines and switches the output to LHEf, the same bare-generator pattern used
-by the existing tutorial's own
-[`Z_mumu.sin`](https://fccsw.web.cern.ch/fccsw/share/gen/whizard/Zpole/Z_mumu.sin)
-example. The card is [`mumuH.sin`](mumuH.sin) in this directory:
+The card, [`mumuH.sin`](mumuH.sin):
 
 ```
 model = SM
@@ -69,7 +50,7 @@ $isr_handler_mode = "recoil"
 isr_alpha         = 0.0072993
 isr_mass          = 0.000511
 
-# Golden-card value (production-quality precision, slow to integrate live):
+# Production-quality precision (slow to integrate live):
 # integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
 # Classroom default (faster, lower precision):
 integrate (mumuH) { iterations = 3:2000:"gw" }
@@ -92,24 +73,16 @@ whizard mumuH.sin
 This produces `mumuH.lhe`.
 
 Two settings are deliberately left out rather than pinned explicitly,
-relying on their defaults:
+relying on their WHIZARD defaults:
 
 - **`mH` (Higgs mass)** — not set, because WHIZARD's `SM` model already
-  defaults it to 125 GeV (`parameter mH = 125` in `SM.mdl`), matching the
-  golden card's own `PMAS(25,1)=125.` and confirmed empirically: generated
-  LHE events carry the Higgs at exactly 125.0 GeV. Note the sibling
-  `wzp6_ee_mumuH_ecm240.sin` card instead sets `mH = 125.1 GeV` explicitly
-  — a minor inconsistency between FCC-config's own cards, not something
-  reconciled here (see the Higgs mass/width item in Open TODOs).
-- **`?keep_beams` / `?keep_remnants`** — not set, because their defaults
-  (`false` and `true` respectively) are exactly what's needed here.
-  `?keep_beams = true` is what caused the Step 2 crash (see the Status
-  callout below) — it writes the original beam particles into the LHE
-  record as extra entries, which WHIZARD's own manual explicitly warns
-  against for reading into PYTHIA. Leaving it at its default `false` avoids
-  that. `?keep_remnants` only has any effect when `?keep_beams = true`
-  (per the manual), so with `?keep_beams` at its default it's inert either
-  way and isn't worth setting.
+  defaults it to 125 GeV (`parameter mH = 125` in `SM.mdl`).
+- **`?keep_beams` / `?keep_remnants`** — not set, relying on their
+  defaults (`false` and `true`). `?keep_beams = true` writes the original
+  beam particles into the LHE record as extra entries, which breaks
+  reading the file into Pythia8 downstream — WHIZARD's own manual
+  explicitly warns against this. `?keep_remnants` only has any effect
+  when `?keep_beams = true`, so it's inert either way here.
 
 ### Why mu mu H, not Z H?
 
@@ -127,15 +100,17 @@ through the Gaudi components in
 [`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
 `GenAlg`), run with `k4run`, the same framework used later for Delphes and
 FCCAnalyses. `PythiaInterface` reads a `.cmd` card, which can point at an
-external LHE file exactly like the working example shipped in `k4Gen` itself
-([`data/Pythia_LHEinput.cmd`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/data/Pythia_LHEinput.cmd)).
+external LHE file, as in `k4Gen`'s own
+[`data/Pythia_LHEinput.cmd`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/data/Pythia_LHEinput.cmd)
+example.
 
-[`mumuH_Hbb.cmd`](mumuH_Hbb.cmd) in this directory is based on
-[`FCC-config`'s `p8_ee_default.cmd`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Pythia8/p8_ee_default.cmd)
-(`winter2023` branch) — the actual card FCC-config uses to read WHIZARD LHE
-output into Pythia8 — with H -> b b decay-forcing added on top:
+The card, [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
 
 ```
+! Reads the WHIZARD LHE output from Step 1 and forces H -> b b. Vertex/time
+! smearing is done separately in the Gaudi steering script
+! (pythia_mumuH.py), not here.
+
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
 Beams:LHEF = mumuH.lhe
@@ -155,64 +130,32 @@ LesHouches:matchInOut = off
 25:onMode  = off
 25:onIfAny = 5
 
-! No extra long-lived-particle or Bose-Einstein settings here - see the
-! Open TODOs section below for why.
+! No long-lived-particle or Bose-Einstein settings here - Pythia8's
+! defaults already give the desired behaviour for both; see
+! Gen/ee/README.md's Open TODOs.
 ```
 
-`p8_ee_default.cmd` itself sets `PartonLevel:FSR = off` too — appropriate
-*there* because its use case is WHIZARD LHE files with the full final state,
-including any colored partons, already present at the matrix-element level
-(nothing left for Pythia8 to decay+shower). That's not our case: our LHE
-only has e+e- -> mu+ mu- H with the Higgs undecayed, and we rely on Pythia8
-itself to decay H -> b b and shower the result. Checked this directly by
-dumping the Pythia8 event record: with `FSR = off`, the b/bbar from the
-Higgs decay went straight into hadronization with no shower emissions at
-all (unrealistic jets); with `FSR` left on (Pythia8's default), the event
-record shows proper gluon-emission branching off the b/bbar before
-hadronization, as expected.
+> **The ISR photon isn't present in the output.** WHIZARD's ISR treatment
+> correctly reduces the visible mu mu H system's kinematics to reflect the
+> radiated energy (its total energy varies event-by-event, roughly
+> 235.5-239.7 GeV instead of a fixed 240, with occasional non-zero net
+> transverse momentum), but the radiated photon itself is classified by
+> WHIZARD as a "beam remnant" and — with `?keep_beams = false` — isn't
+> written into the event record. This doesn't affect this tutorial's two
+> measurements (mu mu recoil mass, H -> b b dijet mass — both driven by
+> the visible mu/mu/b/bbar kinematics, which already reflect the
+> ISR-induced recoil), but it does mean there's no possibility of
+> reconstructing an ISR photon downstream in `Sim/ee`/`Analysis`.
 
-`ISR = off` was checked the same way, and unlike FSR this one didn't reveal
-a hidden dependency: with `ISR = on`, Pythia8 adds a genuine extra
-initial-state radiation photon (visible in the event record, status `-43`,
-radiated directly off one of the incoming leptons by Pythia8's own spacelike
-shower) on top of the energy redistribution WHIZARD's `isr_handler` already
-applied to the beam momenta — real double-counted radiation. With
-`ISR = off`, that extra photon doesn't appear and nothing else changes; ISR
-only concerns the initial state, so there's no FSR-style gating issue here.
-
-> **Caveat: the ISR photon itself is invisible downstream, as a side
-> effect of the `?keep_beams` crash fix, not a deliberate physics choice.**
-> WHIZARD's `?isr_handler` (`$isr_handler_mode = "recoil"`) still generates
-> a real ISR photon per beam internally and correctly recoils the visible
-> system against it — checked directly on generated events: the mu+ mu- H
-> system's total energy varies event-by-event (~235.5-239.7 GeV instead of
-> a fixed 240) and sometimes carries non-zero net transverse momentum
-> (e.g. 0.14 GeV), exactly the signature of a real recoil against a missing
-> photon. But the WHIZARD manual classifies these radiated ISR photons as
-> "beam remnants" (`?keep_remnants` docs: *"for ISR and/or beamstrahlung
-> spectra, the radiated photons are considered as beam remnants"*), and
-> remnants are gated by the same `?keep_beams` flag that had to be set to
-> `false` to fix the Step 2 crash. So the photon itself is never written
-> into the event record — confirmed structurally too: the old
-> `?keep_beams = true` events had explicit outgoing photon lines; the
-> fixed `?keep_beams = false` events don't. For this tutorial's actual
-> measurements (mu mu recoil mass, H -> b b dijet mass) this doesn't
-> matter, since both only depend on the visible mu/mu/b/bbar kinematics,
-> which already correctly reflect the ISR-induced energy loss and recoil.
-> It does mean there's no possibility of ever seeing a reconstructed ISR
-> photon downstream in `Sim/ee`/`Analysis` — that option is gone as an
-> unavoidable consequence of the crash fix, not a deliberate simplification.
-
-Steering script [`pythia_mumuH.py`](pythia_mumuH.py), adapted from `k4Gen`'s
-own
+Steering script [`pythia_mumuH.py`](pythia_mumuH.py), adapted from
+`k4Gen`'s own
 [`options/pythia.py`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/options/pythia.py)
-example — swap in the LHE-reading card above and write out EDM4hep rather
-than plain HepMC (`HepMCFileWriter`'s own docstring says it's for debugging,
-not for actual event storage). Beamspot vertex/time smearing is done here,
-via the Gaudi `GaussSmearVertex` tool wired into `GenAlg`, using the same
-FCC-ee IDEA beamspot values as `p8_ee_default.cmd`'s `Beams:sigmaVertex*`
-settings — not via Pythia8's own `Beams:allowVertexSpread`, which would
-apply it a second time on top of this:
+example — reads the card above and writes EDM4hep rather than plain HepMC
+(`HepMCFileWriter`'s own docstring says plain HepMC is for debugging, not
+event storage). Beamspot vertex/time smearing is applied via the Gaudi
+`GaussSmearVertex` tool wired into `GenAlg`, rather than Pythia8's own
+`Beams:allowVertexSpread`, which would apply it a second time on top of
+this:
 
 ```python
 from Gaudi.Configuration import *
@@ -225,8 +168,7 @@ ApplicationMgr().EvtSel = 'NONE'
 ApplicationMgr().EvtMax = 1000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
-# Beamspot vertex/time smearing (FCC-ee IDEA values, from FCC-config's
-# p8_ee_default.cmd Beams:sigmaVertex{X,Y,Z}/sigmaTime). Done here via the
+# Beamspot vertex/time smearing (FCC-ee IDEA values). Done here via the
 # Gaudi VertexSmearingTool rather than Pythia8's own Beams:allowVertexSpread,
 # so it isn't applied twice.
 from Configurables import GaussSmearVertex
@@ -273,83 +215,13 @@ k4run pythia_mumuH.py
 ```
 
 This produces `mumuH_Hbb.root`, an EDM4hep file with the showered,
-hadronized, H -> b b decayed event record.
+hadronized, H -> b b decayed event record, in an `MCParticles` collection.
 
-> **Status: fixed — Step 2 now runs cleanly.** Actually ran the full chain
-> against the real Key4hep stack (`/cvmfs/sw.hsf.org/key4hep/setup.sh`,
-> WHIZARD 3.1.5, Pythia8 8.315). Step 1: `whizard mumuH.sin` gives
-> sigma ~6.8 fb, matching the known sigma(ee->ZH)*BR(Z->mumu) ~ 200 fb *
-> 3.37% ~ 6.7 fb at 240 GeV. Step 2 (`k4run pythia_mumuH.py`) initially
-> crashed on the first event with:
-> ```
-> Pythia8              FATAL Standard std::exception is caught in sysExecute
-> Pythia8              ERROR vector::_M_range_check: __n (which is 9) >= this->size() (which is 9)
-> ```
-> A `gdb` backtrace (`catch throw`) traced this to
-> `Pythia8::PartonLevel::resonanceShowers()` ->
-> `Pythia8::Particle::iBotCopyId()`, inside Pythia8's own machinery for
-> decaying+showering a resonance (the Higgs) found mid-event. A zero-Gaudi
-> standalone C++ reproducer (`Pythia pythia; pythia.readFile(...);
-> pythia.init(); pythia.next();`) hit the identical crash, ruling out the
-> 2026-08-19 meeting's "needs to be run as Gaudi functionals" lead — this
-> was never a Gaudi/k4Gen issue.
->
-> **Root cause, found via a warning comment on a sibling FCC-config card**
-> ([`wzp6_ee_mumuH_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_ecm240.sin)
-> has `?keep_beams = true # do not use this option, makes Pythia crash`,
-> left in place but unheeded in that card since it only ever exercises the
-> internal PYTHIA6 path): our `mumuH.sin` had `?keep_beams = true` too. A
-> clean retest (the very first attempt to test this flag turned out to be
-> unreliable, from a contaminated debugging script, and wrongly seemed to
-> rule it out) confirms `?keep_beams = false` fixes it completely — a full
-> 1000-event run now completes with a single non-fatal
-> "energy-momentum not quite conserved" warning and produces a valid
-> `mumuH_Hbb.root` (`MCParticles` collection, 102 particles in the first
-> event, fully hadronized). `mumuH.sin` no longer sets `?keep_beams` at
-> all, relying on its default of `false` (see the Environment/Step 1
-> section above).
->
-> For the record, before finding the real cause, these were also tried and
-> made no difference on their own (the actual fix was always `?keep_beams`):
-> `PartonLevel:FSR` on vs off, `LesHouches:matchInOut` on vs off,
-> `PartonLevel:earlyResDec = on`, LHEF version 2.0 vs 3.0, stripping
-> WHIZARD's `<weights>` `sqme_prc` block, forcing H -> b b vs leaving the
-> decay unforced, and forcing H completely stable (`25:mayDecay = off`).
->
-> One earlier claim in this callout was wrong and is corrected here: an
-> initial test seemed to show the crash was specific to particle ID 25
-> (Higgs) as the LHE resonance, based on a WHIZARD LHE with a Z boson in
-> H's place reading in cleanly — but that Z-boson test card never had
-> `?keep_beams = true` set in the first place, so it wasn't a like-for-like
-> comparison. Redone properly (identical card, only H swapped for Z,
-> `?keep_beams = true` kept in both): the Z version crashes identically to
-> the H version. So the crash is generic to `?keep_beams = true` plus any
-> downstream resonance decay, exactly matching the (unheeded) FCC-config
-> warning comment, not something Higgs-specific.
-
-> **Tested at 10,000-event scale, found and fixed a second, scale-dependent
-> issue.** A 1,000-event run only ever showed one non-fatal warning, but at
-> 10,000 events a handful (~3 in 10,000) hit a Pythia8-level failure
-> (energy-momentum check) that retrying doesn't recover from — it's the
-> same event failing deterministically every time, not a transient issue.
-> Without any fix, Gaudi's default per-algorithm `ErrorMax = 1` means even
-> one such event aborts the *entire* run (job exits with an error, most
-> events lost) — this never shows up at 1,000 events, only at scale. Fixed
-> by setting `pythia8gen.ErrorMax = 20` in `pythia_mumuH.py`, so a handful
-> of individually-unrecoverable events get skipped rather than ending the
-> job. Verified: a clean 10,000/10,000-event run with this set.
-
-> **Confirmed handoff to `Sim/ee`:** this stage hands off an EDM4hep ROOT
-> file with an `MCParticles` collection, not a HepMC file and not a combined
-> Pythia8+Delphes run. Checked `key4hep/k4SimDelphes`: its Gaudi component
-> `k4SimDelphesAlg` reads a generic `edm4hep::MCParticleCollection` (data
-> path `"GenParticles"`) — its own example steering script feeds it from a
-> particle gun, not Pythia8, proving it doesn't care how that collection was
-> produced. `DelphesPythia8_EDM4HEP` (which runs Pythia8 internally) is a
-> separate, alternative standalone entry point in the same repo, not the
-> only way in. So `Sim/ee` should use `k4SimDelphesAlg` via `k4run`, reading
-> the `MCParticles` collection from `mumuH_Hbb.root` produced here — the
-> Gen/Sim split as designed is correct.
+`Sim/ee` consumes this file's `MCParticles` collection directly via
+`k4SimDelphesAlg` from
+[`key4hep/k4SimDelphes`](https://github.com/key4hep/k4SimDelphes) — that
+component takes a generic `edm4hep::MCParticleCollection` as input,
+independent of how it was produced.
 
 ## Open TODOs
 
@@ -376,90 +248,62 @@ hadronized, H -> b b decayed event record.
   GitHub rendering would still fall back to a closest-fit generic tag (e.g.
   `ini`-ish for the Pythia8 cards) or plain text. Not started.
 
-The golden card's internal PYTHIA6 shower/hadronization step
-(`$ps_PYTHIA_PYGIVE` in
-[`wzp6_ee_mumuH_Hbb_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_Hbb_ecm240.sin))
-sets several physics parameters. Rather than trying to port PYTHIA6's exact
-tuned numbers onto Pythia8 (risky — PYTHIA6 and Pythia8 don't always define
-equivalent-sounding parameters the same way, and getting this wrong would be
-worse than just using Pythia8's own tune), the resolution here was to match
-which *features* the golden card had enabled, using Pythia8's own default
-values for how each behaves. Checked against Pythia8's manual (version-
-matched to the actual stack) parameter by parameter:
+`mumuH_Hbb.cmd` leaves several PYTHIA6-only settings from the reference
+production configuration (see References) unported, since PYTHIA6 and
+Pythia8 don't always define equivalent-sounding parameters the same way —
+porting the tuned numbers directly would risk introducing wrong physics.
+The approach instead is to match which *feature* was enabled and use
+Pythia8's own default values for how it behaves:
 
-- **Bose-Einstein correlations** (`MSTP(151)=1`, `PARP(151-154)`) —
-  deliberately left off (Pythia8 default), after checking whether it
-  actually matters for this tutorial's two measurements: it doesn't touch
-  muons at all (only identical-boson pairs like pi/K), so the mu mu
-  recoil mass is completely unaffected; for the H -> b b dijet mass it
-  would only be a small within-jet momentum redistribution, since the
-  algorithm is explicitly designed to conserve overall jet 4-momentum
-  (per Pythia8's own manual). Checked it doesn't introduce a higher event
-  failure rate either (1000/1000 events succeed with it on, same as off).
-  Not worth the added complexity for what it buys here — if this
-  changes (e.g. this tutorial ever adds a jet-substructure exercise), it
-  can be turned on via `HadronLevel:BoseEinstein = on`, leaving
-  `BoseEinstein:lambda`/`QRef` at Pythia8 defaults (PYTHIA6's
-  `PARP(151-154)` is a 4-parameter tune and Pythia8's is only 3, so the
-  golden card's specific numbers were never going to be portable anyway).
-- **Long-lived particle stability** (`MSTJ(22)=4`, `PARJ(73)=2250`,
-  `PARJ(74)=2500`) — **left off (Pythia8 default), corrected after an
-  earlier wrong attempt at this.** First pass mapped this to
-  `ParticleDecays:limitTau0 = on` (a pure proper-lifetime/ctau cutoff),
-  reasoning it was a lifetime threshold like PYTHIA6's `PARJ(71)`-based
-  `MSTJ(22)=2` option. That was the wrong PYTHIA6 option: checked the
-  actual PYTHIA 6.4 manual, and `MSTJ(22)=4` is a **geometric** cutoff —
-  "a particle is decayed only if the decay vertex is within a cylindrical
-  volume with radius `PARJ(73)` ... and extent to `±PARJ(74)`" — i.e.
-  decay-vertex *position* (momentum-dependent), not proper lifetime at
-  all. The correct Pythia8 equivalent is `ParticleDecays:limitCylinder`
-  (`xyMax`/`zMax`), not `limitTau0`. Checked the practical difference on
-  real generated events (500-event sample): with the wrong `limitTau0 =
-  on` setting, 100% of K_S0/Lambda came out *stable*; with it left off
-  (Pythia8 default), 100% come out *decayed* — matching what the golden
-  card's actual cylinder cutoff does in practice, since at these energies
-  essentially every K_S0/Lambda decays well inside the golden card's
-  ~2.25m/2.5m volume anyway. So the fix was to remove the setting
-  entirely, not port a different one — Pythia8's own default already
-  matches the golden card's practical behavior for this tutorial's
-  particle content.
-- **Fragmentation function for b/c quarks** (`MSTJ(11)=3`, PYTHIA6's
-  "Bowler" option) — **no change needed**: Pythia8's manual states
-  outright that "for massive quarks..., the Bowler modification to the
-  Lund FF is the default choice." So this golden-card setting is already
-  Pythia8's default behavior with zero configuration.
-- **Higgs mass and width** (`PMAS(25,1)=125.`, `PMAS(25,2)=0.4143E-02`,
-  i.e. 4.143 MeV) — no change: Pythia8's own default (125.0 GeV,
-  4.08 MeV width) already matches closely.
-- **Lund `a`/`b`/`sigma` and diquark/meson-multiplet tune**
-  (`PARJ(1,2,3,4,11-17,21,41,42)`, `MSTP(3)`) — no change: these are
-  baseline numeric tuning knobs Pythia8 always applies some value for
-  (`StringZ:aLund`/`bLund`, `StringPT:sigma`, `StringFlav:...`), not
-  on/off features to toggle, so under this approach they're left at
-  Pythia8's own defaults rather than guessing at cross-code equivalence.
-  As a sanity check on how different the actual numbers are: the golden
-  card's `PARJ(41)/(42)` (Lund a/b = 0.11/0.52) versus Pythia8's defaults
-  (`aLund`/`bLund` = 0.68/0.98) differ substantially — a real tune
-  difference, not a rounding one, which is exactly why these weren't
-  guessed at.
-- **`MSTJ(28)=0`** (disables PYTHIA6's own tau decay, deferring to an
-  external tool like TAUOLA for correct tau spin/polarization
-  correlations) — checked, and it's not as inapplicable as first assumed:
-  taus do appear in this chain, not from the H -> b b decay itself, but
-  from semitauonic B-hadron decays (B -> D(*) tau nu, a real ~2-3%-per-B
-  branching fraction) after the b/bbar hadronize - confirmed empirically,
-  ~8.5% of a 200-event sample had at least one tau. TAUOLA's value is
-  correct tau polarization for analyses where tau decay kinematics *are*
-  the observable (e.g. Z/H -> tau tau); here the taus are secondary,
-  buried inside b-jets, and nothing in this tutorial's analysis (mu mu
-  recoil mass, H -> b b dijet mass) is sensitive to tau polarization, so
-  Pythia8's own native tau decay treatment should be adequate without
-  TAUOLA. If more precise B-hadron decay modeling ever mattered, there's
-  an available upgrade path already in this pipeline:
-  `PythiaInterface`'s `doEvtGenDecays` option (currently unset/off,
-  see `pythia_mumuH.py`) would route B-hadron decays through EvtGen
-  instead of Pythia8's simpler built-in table, improving tau kinematics
-  as a side effect too. Not enabled here.
+- **Bose-Einstein correlations** — left off (Pythia8 default). It only
+  affects identical-boson pairs (pions/kaons), not muons, so the mu mu
+  recoil mass is unaffected; for the H -> b b dijet mass it's at most a
+  small within-jet momentum redistribution, since the algorithm is
+  designed to conserve overall jet 4-momentum.
+- **Long-lived particle stability** — left off (Pythia8 default). The
+  reference PYTHIA6 configuration uses a cylindrical decay-vertex-position
+  cutoff (`MSTJ(22)=4`), not a proper-lifetime one — Pythia8's
+  `ParticleDecays:limitCylinder` is the actual analog, not
+  `ParticleDecays:limitTau0`. At FCC-ee energies, K_S0/Lambda decay well
+  within that cylinder anyway, so Pythia8's default behaviour (its own
+  built-in per-particle lifetime threshold, which also decays K_S0/Lambda)
+  already matches.
+- **Fragmentation function for b/c quarks** — no change needed: Pythia8's
+  manual states that for massive quarks, the Bowler modification to the
+  Lund fragmentation function (PYTHIA6's `MSTJ(11)=3`) is already the
+  default.
+- **Higgs mass and width** — no change: Pythia8's own default (125.0 GeV,
+  4.08 MeV width) already closely matches the reference configuration's
+  125 GeV / 4.143 MeV.
+- **Lund `a`/`b`/`sigma` and diquark/meson-multiplet tune** — left at
+  Pythia8's own defaults (`StringZ:aLund`/`bLund`, `StringPT:sigma`,
+  `StringFlav:...`): these are baseline numeric tuning parameters Pythia8
+  always applies some value for, not on/off features, so cross-code
+  numeric equivalence isn't assumed. For reference, the PYTHIA6
+  configuration's Lund a/b (0.11/0.52) differ substantially from Pythia8's
+  defaults (0.68/0.98) — a real tune difference, not just an unset
+  default.
+- **Tau decay** — no external tool used (the reference configuration
+  defers tau decay to an external tool like TAUOLA for correct
+  spin/polarization correlations). Taus do appear in this chain (not from
+  the forced H -> b b decay, but from semitauonic B-hadron decays after
+  the b/bbar hadronize, at the ~2-3%-per-B branching level), but they're
+  secondary objects inside b-jets, and neither of this tutorial's
+  measurements is sensitive to tau polarization, so Pythia8's own native
+  tau decay treatment is adequate. `PythiaInterface`'s `doEvtGenDecays`
+  option (currently off) would route B-hadron decays through EvtGen
+  instead of Pythia8's built-in table if more precise modeling is ever
+  needed.
+
+## References
+
+- WHIZARD card this stage's `mumuH.sin` is adapted from:
+  [`wzp6_ee_mumuH_Hbb_ecm240.sin`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Whizard/v3.0.3/wzp6_ee_mumuH_Hbb_ecm240.sin)
+  (`FCC-config`, `winter2023` branch — production campaigns live on their
+  own branch, not on `main`).
+- Pythia8 card this stage's `mumuH_Hbb.cmd` is adapted from:
+  [`p8_ee_default.cmd`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Pythia8/p8_ee_default.cmd)
+  (`FCC-config`, `winter2023` branch).
 
 ## What's next
 
