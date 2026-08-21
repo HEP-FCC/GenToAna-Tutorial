@@ -15,7 +15,22 @@ Check if you have setup the software stack and the `k4run` executable is availab
 
 We will again be using the `Gaudi` approach you learned in the previous part of the tutorial, so we need a steering file to tell it that we want to run Delphes and with which settings. 
 
-A skeleton of such a steering file is provided in `delphes_mumuH_IDEA.py`. You can already take a look into it and try to understand which information we need to fill in in order to make this work. Remember you can use `k4run delphes_mumuH_IDEA.py --help` to get a more detailed description of the config parameters. 
+A skeleton of such a steering file is provided in `delphes_mumuH_IDEA.py`. You can already take a look into it and try to understand which information we need to fill in in order to make this work yourself. Remember you can use `k4run delphes_mumuH_IDEA.py --help` to get a more detailed description of the config parameters. 
+
+Let us walk-through together the different parameters we have to set in the steering file. 
+
+For the input section we have:
+- `podioevent.input` sets the path of the input files, so fill in the location of your output file from the previous step here. 
+- `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the the generator level particles written out py `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. 
+
+Next, we load and configure the Delphes algorithm we want to run. In particular we use `k4SimDelphesAlg`, this is an implementation of Delphes in the key4hep environment that directly converts the output to `EDM4HEP`. If you are interested, you can find more information about it <HERE> (ADD SOME LINKS TO SOURCE CODE OR DOC?). In terms of settings to fill in we have here:
+- `delphesalg.DelphesCard` specifies which Delphes card we want to use. A Delphes card is a plain-text `(.tcl)` configuration file that defines a specific detector's parametrized response — its geometry, resolutions, and reconstruction efficiencies. Because that parametrization lives entirely in the card, swapping in a different one lets you simulate a different detector from the same generator-level input easily, which is the real strength of the fast-sim approach. We will use the baseline FCC-ee IDEA detector card. It comes pre-installed with the `key4hep` software stack, and you can find the main card under: `$DELPHES_DIR/cards/delphes_card_IDEA.tcl`
+There are many other cards, for different (future) colliders and detectors in `$DELPHES_DIR/cards/`, which you can also view in your browser on [on github](https://github.com/delphes/delphes/tree/master/cards). 
+- `delphesalg.DelphesOutputSettings` here we need to set the path to another config file defining which collections we want to store in our output `EDM4HEP` output file and what their names are. You can use the `edm4hep_IDEA.tcl` baseline configuration provided in this directory. 
+- `delphesalg.GenParticles.Path` tells Delphes what the collection of generator level particles to send through the detector response simulation is, use the same name here as for the input collection. 
+
+Finally, we define the following for our output: 
+- `out.filename` is simply the name of your output file, set it to something that seems logical to you, for example `events_mumuH_Hbb_Delphes_IDEA.edm4hep.root`. 
 
 ## Understanding edm4hep datamodel collections
 
@@ -39,10 +54,8 @@ output_file - output file in ROOT format.
 
 <!-- telling us which input arguments it expects. Let's go through them: -->
 
-- The `config_file`: This is our Delphes card, which contains the parametrisations of the resolutions and efficiencies for a specific detector concept. We will use the baseline FCC-ee IDEA detector card. It comes pre-installed with the `key4hep` software stack, and you can find the main card under: `$DELPHES_DIR/cards/delphes_card_IDEA.tcl`
-There are many other cards, for different (future) colliders and detectors in `$DELPHES_DIR/cards/`, which you can also view in your browser on [on github](https://github.com/delphes/delphes/tree/master/cards). 
 
-- The `output_config_file` file: This file defines which collections we have in our output EDM4HEP output file and what their names are. We will use the standard version which comes with the software stack installation as `$K4SIMDELPHES/edm4hep_output_config.tcl`. 
+- The `output_config_file` file: This file  We will use the standard version which comes with the software stack installation as `$K4SIMDELPHES/edm4hep_output_config.tcl`. 
 
 - The `pythia_card`: As the name says, this is the configuration card for `Pythia`. Here we use the one provided as `PythiaCard/tester_pwp8_pp_hh_5f_hhbbyy.cmd`. It tells `Pythia` to run over the di-Higgs LHE file provided (`LHEInput/lhe_tester_ggHH.lhe`).  #TO UPDATE!
 
