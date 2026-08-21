@@ -28,6 +28,13 @@ pythia8gen = GenAlg("Pythia8")
 pythia8gen.SignalProvider = pythia8gentool
 pythia8gen.VertexSmearingTool = smeartool
 pythia8gen.hepmc.Path = "hepmc"
+# A small fraction of events (~1 in a few thousand) hit an unrecoverable
+# Pythia8-level failure (e.g. energy-momentum conservation check) that
+# retrying doesn't fix. Without raising this, Gaudi's default ErrorMax = 1
+# means a single such event aborts the whole run - only shows up at scale
+# (not in a 1000-event test). ErrorMax = 20 lets a handful be skipped
+# instead. Deprecated on some Gaudi versions but still functional.
+pythia8gen.ErrorMax = 20
 ApplicationMgr().TopAlg += [pythia8gen]
 
 from Configurables import HepMCToEDMConverter

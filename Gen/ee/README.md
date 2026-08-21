@@ -242,6 +242,13 @@ pythia8gen = GenAlg("Pythia8")
 pythia8gen.SignalProvider = pythia8gentool
 pythia8gen.VertexSmearingTool = smeartool
 pythia8gen.hepmc.Path = "hepmc"
+# A small fraction of events (~1 in a few thousand) hit an unrecoverable
+# Pythia8-level failure (e.g. energy-momentum conservation check) that
+# retrying doesn't fix. Without raising this, Gaudi's default ErrorMax = 1
+# means a single such event aborts the whole run - only shows up at scale
+# (not in a 1000-event test). ErrorMax = 20 lets a handful be skipped
+# instead. Deprecated on some Gaudi versions but still functional.
+pythia8gen.ErrorMax = 20
 ApplicationMgr().TopAlg += [pythia8gen]
 
 from Configurables import HepMCToEDMConverter
@@ -316,6 +323,18 @@ hadronized, H -> b b decayed event record.
 > the H version. So the crash is generic to `?keep_beams = true` plus any
 > downstream resonance decay, exactly matching the (unheeded) FCC-config
 > warning comment, not something Higgs-specific.
+
+> **Tested at 10,000-event scale, found and fixed a second, scale-dependent
+> issue.** A 1,000-event run only ever showed one non-fatal warning, but at
+> 10,000 events a handful (~3 in 10,000) hit a Pythia8-level failure
+> (energy-momentum check) that retrying doesn't recover from — it's the
+> same event failing deterministically every time, not a transient issue.
+> Without any fix, Gaudi's default per-algorithm `ErrorMax = 1` means even
+> one such event aborts the *entire* run (job exits with an error, most
+> events lost) — this never shows up at 1,000 events, only at scale. Fixed
+> by setting `pythia8gen.ErrorMax = 20` in `pythia_mumuH.py`, so a handful
+> of individually-unrecoverable events get skipped rather than ending the
+> job. Verified: a clean 10,000/10,000-event run with this set.
 
 > **Confirmed handoff to `Sim/ee`:** this stage hands off an EDM4hep ROOT
 > file with an `MCParticles` collection, not a HepMC file and not a combined
