@@ -25,10 +25,13 @@ which whizard
 ```
 
 WHIZARD has no complete, supported interface to Pythia8 — only to the
-legacy PYTHIA6. So this step only generates the hard process and writes it
-out as LHEf; showering, hadronization, and the H -> b b decay all happen as
-an explicit separate step in Pythia8 (Step 2 below), rather than inside
-WHIZARD itself.
+legacy PYTHIA6 (per the
+[WHIZARD manual](https://whizard.hepforge.org/manual.pdf): the "Parton
+shower and hadronization from PYTHIA8" section is an empty stub, and the
+documented `$shower_method` values are only `"WHIZARD"` and `"PYTHIA6"`).
+So this step only generates the hard process and writes it out as LHEf;
+showering, hadronization, and the H -> b b decay all happen as an explicit
+separate step in Pythia8 (Step 2 below), rather than inside WHIZARD itself.
 
 The card, [`mumuH.sin`](mumuH.sin):
 
@@ -80,9 +83,11 @@ relying on their WHIZARD defaults:
 - **`?keep_beams` / `?keep_remnants`** — not set, relying on their
   defaults (`false` and `true`). `?keep_beams = true` writes the original
   beam particles into the LHE record as extra entries, which breaks
-  reading the file into Pythia8 downstream — WHIZARD's own manual
-  explicitly warns against this. `?keep_remnants` only has any effect
-  when `?keep_beams = true`, so it's inert either way here.
+  reading the file into Pythia8 downstream — the
+  [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) explicitly
+  warns against this ("in order to read Les Houches accord event files
+  into PYTHIA, no beam particles are allowed"). `?keep_remnants` only has
+  any effect when `?keep_beams = true`, so it's inert either way here.
 
 ### Why mu mu H, not Z H?
 
@@ -118,9 +123,10 @@ Beams:setProductionScalesFromLHEF = off
 Beams:allowMomentumSpread = off
 
 ! ISR already handled by WHIZARD's isr_handler in Step 1 - keep off here to
-! avoid double-counting radiation. FSR stays on (Pythia8 default): it's what
-! actually showers the H -> b b decay products before hadronization - with
-! it off, b/bbar go straight into string fragmentation with zero shower.
+! avoid double-counting radiation. FSR stays on (Pythia8 default): per the
+! Pythia8 manual's PartonLevel:FSRinResonances flag, this is what actually
+! showers the H -> b b decay products before hadronization - with it off,
+! b/bbar go straight into string fragmentation with zero shower.
 PartonLevel:ISR = off
 
 Check:epTolErr = 1e-1
@@ -140,8 +146,11 @@ LesHouches:matchInOut = off
 > radiated energy (its total energy varies event-by-event, roughly
 > 235.5-239.7 GeV instead of a fixed 240, with occasional non-zero net
 > transverse momentum), but the radiated photon itself is classified by
-> WHIZARD as a "beam remnant" and — with `?keep_beams = false` — isn't
-> written into the event record. This doesn't affect this tutorial's two
+> the [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) as a
+> "beam remnant" ("for ISR and/or beamstrahlung spectra, the radiated
+> photons are considered as beam remnants") and — with
+> `?keep_beams = false` — isn't written into the event record. This
+> doesn't affect this tutorial's two
 > measurements (mu mu recoil mass, H -> b b dijet mass — both driven by
 > the visible mu/mu/b/bbar kinematics, which already reflect the
 > ISR-induced recoil), but it does mean there's no possibility of
@@ -258,31 +267,34 @@ Pythia8's own default values for how it behaves:
 - **Bose-Einstein correlations** — left off (Pythia8 default). It only
   affects identical-boson pairs (pions/kaons), not muons, so the mu mu
   recoil mass is unaffected; for the H -> b b dijet mass it's at most a
-  small within-jet momentum redistribution, since the algorithm is
-  designed to conserve overall jet 4-momentum.
+  small within-jet momentum redistribution, since the
+  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
+  describes the algorithm as designed to conserve overall jet 4-momentum.
 - **Long-lived particle stability** — left off (Pythia8 default). The
   reference PYTHIA6 configuration uses a cylindrical decay-vertex-position
-  cutoff (`MSTJ(22)=4`), not a proper-lifetime one — Pythia8's
-  `ParticleDecays:limitCylinder` is the actual analog, not
+  cutoff (`MSTJ(22)=4`), not a proper-lifetime one — per the
+  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html),
+  the actual analog is `ParticleDecays:limitCylinder`, not
   `ParticleDecays:limitTau0`. At FCC-ee energies, K_S0/Lambda decay well
   within that cylinder anyway, so Pythia8's default behaviour (its own
   built-in per-particle lifetime threshold, which also decays K_S0/Lambda)
   already matches.
-- **Fragmentation function for b/c quarks** — no change needed: Pythia8's
-  manual states that for massive quarks, the Bowler modification to the
-  Lund fragmentation function (PYTHIA6's `MSTJ(11)=3`) is already the
-  default.
+- **Fragmentation function for b/c quarks** — no change needed: the
+  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
+  states that for massive quarks, the Bowler modification to the Lund
+  fragmentation function (PYTHIA6's `MSTJ(11)=3`) is already the default.
 - **Higgs mass and width** — no change: Pythia8's own default (125.0 GeV,
   4.08 MeV width) already closely matches the reference configuration's
   125 GeV / 4.143 MeV.
 - **Lund `a`/`b`/`sigma` and diquark/meson-multiplet tune** — left at
   Pythia8's own defaults (`StringZ:aLund`/`bLund`, `StringPT:sigma`,
-  `StringFlav:...`): these are baseline numeric tuning parameters Pythia8
-  always applies some value for, not on/off features, so cross-code
-  numeric equivalence isn't assumed. For reference, the PYTHIA6
-  configuration's Lund a/b (0.11/0.52) differ substantially from Pythia8's
-  defaults (0.68/0.98) — a real tune difference, not just an unset
-  default.
+  `StringFlav:...`, per the
+  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)):
+  these are baseline numeric tuning parameters Pythia8 always applies
+  some value for, not on/off features, so cross-code numeric equivalence
+  isn't assumed. For reference, the PYTHIA6 configuration's Lund a/b
+  (0.11/0.52) differ substantially from Pythia8's defaults (0.68/0.98) —
+  a real tune difference, not just an unset default.
 - **Tau decay** — no external tool used (the reference configuration
   defers tau decay to an external tool like TAUOLA for correct
   spin/polarization correlations). Taus do appear in this chain (not from
@@ -304,6 +316,10 @@ Pythia8's own default values for how it behaves:
 - Pythia8 card this stage's `mumuH_Hbb.cmd` is adapted from:
   [`p8_ee_default.cmd`](https://github.com/HEP-FCC/FCC-config/blob/winter2023/FCCee/Generator/Pythia8/p8_ee_default.cmd)
   (`FCC-config`, `winter2023` branch).
+- [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) (covers up to
+  v3.4.3).
+- [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
+  (v8.315, matching the version in the Key4hep stack used here).
 
 ## What's next
 
