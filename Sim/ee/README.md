@@ -32,14 +32,31 @@ There are many other cards, for different (future) colliders and detectors in `$
 Finally, we define the following for our output: 
 - `out.filename` is simply the name of your output file, you can pick it freely but remember to explicitly include the `.root` file format ending.
 
-**Task: Complete the steering file and run the Delphes fast simulation with the IDEA detector parametrization.**
+<!-- **Task: Complete the steering file and run the Delphes fast simulation with the IDEA detector parametrization.**
 
 <details>
   <summary>Solution</summary>
 
   ```k4run solutions/delphes_IDEA_mumuH_allColl.py```
   
-</details>
+</details> -->
+
+### Task :
+> <details open>
+> <summary><strong>❓ Question:</strong></summary>
+> <br>
+> Complete the steering file and run the Delphes fast simulation with the IDEA detector parametrization.
+>
+
+> 
+> <details><summary><strong> ✅ Solutions: </strong></summary>
+> <br> 
+> ```k4run solutions/delphes_IDEA_mumuH_allColl.py```
+>
+>
+> </details></details>
+<br>
+
 
 You should see `Delphes` starting up and summarizing its setup, for example: 
 
@@ -60,7 +77,43 @@ It will then process the 10k events you produced, which will take a few minutes.
 ## Understanding the Delphes parametrization 
 Next, lets look at the `Delphes` card to see how the fast simulation works. For the FCC-ee IDEA scenario, we are modelling a detector layout of a vertex detector and drift chamber (inner tracking), followed by dual-readout electromagnetic and hadronic calorimeters, as well as a separate muon system embedded in the return yoke, which provides efficient muon identification and rejection of hadronic fakes. Parametrizations in bins of the pseudorapidity &eta; and the transverse momentum pT are used to model the response across the different regions of the detector. Roughly, the fast simulation proceeds in the following main steps:
 
-- We start from all *stable particles*, as in particles that are written out by `Pythia` as outgoing particles, that do not further decay, at generator level. These are the input to the `ParticlePropagator` module, which propagates them through the magnetic field of the inner trackers. Neutral particles are propagated in a straight line, while charged particles are deflected on a heliocoidal trajectory - in each case the trajectory is modelled upto the point where the particle enters the calorimeter. Here, the magnetic field strength and coverage of the field (= radius of the inner tracker) are user-defined properties, that depend on the detector scenario we want to study. 
+- We start from all *stable particles*, as in particles that are written out by `Pythia` as outgoing particles, that do not further decay, at generator level. These are named `Delphes/allParticles` within the card and are the direct input to several Delphes modules:
+  - The `BeamSpotSmearing` module gives the option to apply a spatial and temporal Gaussian offset to the collision vertices to mimic   the finite size of the beam spot, if this step is not yet done in the generation. With the standard IDEA setup we rely on here, `Pythia` has already taken care of this, so all the values here are set to zero, disabling the additional correction. 
+  - Following this if the beam spot correction is applied, the `TruthVertexFinder` recalculates the truth primary vertex in the event. 
+
+- Next, we model the path of all particles through the tracking system in the following way:
+  -  The generator level particles are passed to the `ParticlePropagator` module, which propagates them through the magnetic field of the inner trackers. Neutral particles are propagated in a straight line, while charged particles are deflected on a heliocoidal trajectory - in each case the trajectory is modelled upto the point where the particle enters the calorimeter. Here, the magnetic field strength and coverage of the field (= radius of the inner tracker) are user-defined properties, that depend on the detector scenario we want to study. For the neutral particles, we just need this step to determine the position at which they enter the calorimeter, so we can pick them up in the simulation of the calorimeter response and are therefore done with him here. For charged particles, we continue modeling the tracker response. 
+  - First we apply the `TrackingEfficiency` modules for the different particle types, this contains the probability of the track for a particle to be reconstructed in bins of the transverse momentum and pseudorapidity. This is the reason why we needed to do the above simple propagation through the magnetic field first, because this tells us exactly which bin a given particle is in to determine the tracking efficiency. 
+  - Next, we perform a more complete - but still fast-simulation, parametrization based - modelling of the track, its hits and its resolution using the `TrackCovariance` module. TODO FILL THIS IN PROPERLY. INCLUDE ALSO PID (CLUSTERCOUNTING, TOF EXPLANATION). END WITH PICKING UP BOTH NEUTRALS AND CHARGED AGAIN AT THE CALOS FOR NEXT STEP 
+
+- For simulating the calorimeter response, a segmentation in &eta; and &phi; is given in the `Calorimeter` module, and it is assumed that each particle deposits its energy into one of such segments (then called a tower). This module also specifies which fraction of a particle's energy is deposited in the electromagnetic and hadronic calorimeter. The energy deposits in the electromagnetic and hadronic calorimeters are then smeared independently, following parametrizations in energy and pseudo-rapidity, as defined in the card. 
+
+- *Particle-flow* objects are then built from the tracks and calorimeter towers, forming our physics objects.  IS THIS TRUE? ADD MORE INFO
+
+- *Identification efficiency* parametrizations are defined for objects of interest such as photons, muons and electrons, for example in the `PhotonEfficiency` module. These efficiencies are applied on top of the tracking efficiencies. Furthermore, for these objects an isolation variable (named `PTRatioMax` in the card) is defined in e.g. `ElectronIsolation`. 
+
+- The last block of the card, the `TreeWriter` module, shows you which objects are propagated to Delphes output level. Note that this doesn't mean we will have them in our `.root` file that we created above, as there is still one step in our simulation chain, which is the conversion from `Delphes` output to `EDM4HEP` events. 
+
+### Task 1 : Understanding the Delphes card 
+Look through the Delphes card and try to answer the following questions with the help of the guide above: 
+
+> <details open>
+> <summary><strong>❓Questions :</strong></summary>
+> <br>
+> 
+
+> 
+> <details><summary><strong> ✅ Solutions: </strong></summary>
+> <br> 
+> This is the answer
+>
+>
+> </details></details>
+<br>
+
+### Task 2 : Changing the PID settings 
+TO DO ! COME UP WITH TASK ! MAYBE AN OPTIONAL TASK GIVEN THE TIME? 
+
 
 ## Understanding edm4hep datamodel collections
 
