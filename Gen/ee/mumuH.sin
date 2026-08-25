@@ -1,0 +1,27 @@
+model = SM
+
+# Center of mass energy
+sqrts = 240 GeV
+
+process mumuH = e1, E1 => e2, E2, H
+
+beams = e1, E1 => gaussian => isr
+
+gaussian_spread1 = 0.185%
+gaussian_spread2 = 0.185%
+
+?isr_handler      = true
+$isr_handler_mode = "recoil"
+isr_alpha         = 0.0072993
+isr_mass          = 0.000511
+
+# Production-quality precision (slow to integrate live):
+# integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
+# Classroom default (faster, lower precision):
+integrate (mumuH) { iterations = 3:2000:"gw" }
+
+n_events = 1000
+
+$lhef_version  = "3.0"
+sample_format  = lhef
+simulate (mumuH) { $sample = "mumuH" }
