@@ -41,20 +41,22 @@ Finally, we define the following for our output:
   
 </details> -->
 
-### Task :
+### Task 1: Run the IDEA fast simulation
 > <details open>
 > <summary><strong>❓ Question:</strong></summary>
 > <br>
 > Complete the steering file and run the Delphes fast simulation with the IDEA detector parametrization.
 >
-
+> <br>
 > 
-> <details><summary><strong> ✅ Solutions: </strong></summary>
-> <br> 
-> ```k4run solutions/delphes_IDEA_mumuH_allColl.py```
+> <details>
+> <summary><strong>✅ Solution :</strong></summary>
 >
->
-> </details></details>
+> ```bash
+> k4run solutions/delphes_IDEA_mumuH_allColl.py
+> ```
+> </details>
+> </details>
 <br>
 
 
@@ -82,9 +84,29 @@ Next, lets look at the `Delphes` card to see how the fast simulation works. For 
   - Following this if the beam spot correction is applied, the `TruthVertexFinder` recalculates the truth primary vertex in the event. 
 
 - Next, we model the path of all particles through the tracking system in the following way:
-  -  The generator level particles are passed to the `ParticlePropagator` module, which propagates them through the magnetic field of the inner trackers. Neutral particles are propagated in a straight line, while charged particles are deflected on a heliocoidal trajectory - in each case the trajectory is modelled upto the point where the particle enters the calorimeter. Here, the magnetic field strength and coverage of the field (= radius of the inner tracker) are user-defined properties, that depend on the detector scenario we want to study. For the neutral particles, we just need this step to determine the position at which they enter the calorimeter, so we can pick them up in the simulation of the calorimeter response and are therefore done with him here. For charged particles, we continue modeling the tracker response. 
-  - First we apply the `TrackingEfficiency` modules for the different particle types, this contains the probability of the track for a particle to be reconstructed in bins of the transverse momentum and pseudorapidity. This is the reason why we needed to do the above simple propagation through the magnetic field first, because this tells us exactly which bin a given particle is in to determine the tracking efficiency. 
-  - Next, we perform a more complete - but still fast-simulation, parametrization based - modelling of the track, its hits and its resolution using the `TrackCovariance` module. TODO FILL THIS IN PROPERLY. INCLUDE ALSO PID (CLUSTERCOUNTING, TOF EXPLANATION). END WITH PICKING UP BOTH NEUTRALS AND CHARGED AGAIN AT THE CALOS FOR NEXT STEP 
+  -  The generator level particles are passed to the `ParticlePropagator` module, which propagates them through the magnetic field of the inner trackers. Neutral particles are propagated in a straight line, while charged particles are deflected on a heliocoidal trajectory - in each case the trajectory is modelled upto the point where the particle enters the calorimeter. Here, the magnetic field strength and coverage of the field (= radius of the inner tracker) are user-defined properties, that depend on the detector scenario we want to study. For the neutral particles, we just need this step to determine the position at which they enter the calorimeter, so we can pick them up in the simulation of the calorimeter response and are therefore done with them here. For charged particles, we continue modeling the tracker response. 
+  - First we apply the `TrackingEfficiency` modules for the different particle types, these contain the probability of the track for a particle to be reconstructed in bins of the transverse momentum and pseudorapidity. This is the reason why we needed to do the above simple propagation through the magnetic field first, because this tells us exactly which bin a given particle is in to determine the tracking efficiency. 
+  - Next, we perform a more complete modelling of the track, its hits, and its resolution by propagating a covariance matrix through an explicit layer-by-layer detector geometry, using the `TrackCovariance` module, the instance of which is called `TrackSmearing` in the IDEA card. In very simple words, this module walks through the tracking detector layer by layer, and at each one calculates how much extra "blur" is added to our knowledge of the particle's path — building up, layer by layer, an overall picture of how precisely we can know its trajectory. Note that this is still a fast simulation: instead of simulating every physical interaction in detail, it calculates this blurring directly from the detector's geometry at each layer. TODO: PROBABLY WE WANT TO COLLAPSE THE BELOW LONGER EXPLANATION WITH SOME TEXT ITS OPTIONAL !?
+  In the `DetectorGeometry` block, you can literally see this layer-by-layer description laid out line by line, with names like `VTXLOW`, `VTXHIGH`, `DCH`, `BSILWRP`, and `MAG` marking out the vertex detector barrels and disks, the 112 drift-chamber sense-wire layers, the silicon wrapper, and the solenoid coil.  The information characterising each layer, encoded in each row, contains the position and dimensions of the layer, how much material it represents and if it's an active measurement layer, its a hit position resolution, i.e. the size of the aforementioned "blur". 
+  Given a track's true trajectory through this geometry, the module analytically propagates a full track-parameter covariance matrix $C$ outward through the material stack, accumulating the multiple-scattering contribution from each passive layer and the measurement uncertainty from each active layer as it goes. Concretely, $C$ is obtained from
+
+  $$C^{-1} = A^t S^{-1} A,$$
+
+  where $A$ is the matrix of derivatives of each layer's predicted hit coordinate with respect to the track parameters, and $S$ is the covariance matrix of the measurements themselves:
+
+  $$S_{ij} = \sigma_i^2\,\delta_{ij} + M_{ij}.$$
+
+  Here $\sigma_i^2$ is simply layer $i$'s hit resolution, while $M_{ij}$ is a correlation term built up from the multiple scattering at every layer crossed before layers $i$ and $j$ — this is where each layer's material budget enters. No random sampling is needed to get $C$ itself; it comes out of this single analytic calculation.
+
+The track resolution achieved in this way therefore isn't the result of a hand-tuned function of $\eta$ and $p_T$. It just falls out naturally from the actual detector layout: tracks at small polar angles pass through more material and fewer effective measurement layers, so their resolution degrades in exactly the way it would in the real detector, without needing a separate resolution-vs-$p_T$/$\eta$ formula to mimic that behavior.
+  
+  <!-- Instead of smearing a track's momentum with a simple formula, this module encodes the layer-by-layer description of the IDEA tracker: the vertex detector barrels and disks, all 112 drift-chamber sense-wire layers with their alternating stereo angles, the silicon wrapper, and the solenoid coil. Each layer is assigned a radiation length (material budget) and, if it's an active measurement layer, a hit position resolution. Given a track's true trajectory through this geometry, the module analytically propagates a full track-parameter covariance matrix outward through the material stack, accumulating the multiple-scattering contribution from each passive layer and the measurement uncertainty from each active layer as it goes. The track resolution achieved in this way does therefore not depend on hand-tuned functions of η and pT, but emerges self-consistently from the actual detector layout: tracks at small polar angles pass through more material and fewer effective measurement layers, so their resolution degrades in exactly the way it would in the real detector, without that behavior having to be programmed in explicitly.
+   -->
+
+
+- Additionally, two measurements needed for the particle identification (PID) 
+  
+  TODO FILL THIS IN PROPERLY. INCLUDE ALSO PID (CLUSTERCOUNTING, TOF EXPLANATION). END WITH PICKING UP BOTH NEUTRALS AND CHARGED AGAIN AT THE CALOS FOR NEXT STEP 
 
 - For simulating the calorimeter response, a segmentation in &eta; and &phi; is given in the `Calorimeter` module, and it is assumed that each particle deposits its energy into one of such segments (then called a tower). This module also specifies which fraction of a particle's energy is deposited in the electromagnetic and hadronic calorimeter. The energy deposits in the electromagnetic and hadronic calorimeters are then smeared independently, following parametrizations in energy and pseudo-rapidity, as defined in the card. 
 
@@ -94,14 +116,14 @@ Next, lets look at the `Delphes` card to see how the fast simulation works. For 
 
 - The last block of the card, the `TreeWriter` module, shows you which objects are propagated to Delphes output level. Note that this doesn't mean we will have them in our `.root` file that we created above, as there is still one step in our simulation chain, which is the conversion from `Delphes` output to `EDM4HEP` events. 
 
-### Task 1 : Understanding the Delphes card 
+### Task 2 : Understand the Delphes card
 Look through the Delphes card and try to answer the following questions with the help of the guide above: 
 
 > <details open>
 > <summary><strong>❓Questions :</strong></summary>
 > <br>
 > 
-
+> - Which fraction of their energy do electrons deposit in the ECal? What about Kaons?
 > 
 > <details><summary><strong> ✅ Solutions: </strong></summary>
 > <br> 
@@ -111,11 +133,13 @@ Look through the Delphes card and try to answer the following questions with the
 > </details></details>
 <br>
 
-### Task 2 : Changing the PID settings 
-TO DO ! COME UP WITH TASK ! MAYBE AN OPTIONAL TASK GIVEN THE TIME? 
-
-
 ## Understanding edm4hep datamodel collections
+
+### Task 3 : Changing the PID settings 
+TO DO ! COME UP WITH TASK ! MAYBE AN OPTIONAL TASK GIVEN THE TIME? SHOULD COMBINE THE EDM4HEP PART AND THE DELPEHS PART!
+
+
+
 
 
 
