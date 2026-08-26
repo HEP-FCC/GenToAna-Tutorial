@@ -123,12 +123,31 @@ Look through the Delphes card and try to answer the following questions with the
 > <summary><strong>❓Questions :</strong></summary>
 > <br>
 > 
-> - Which fraction of their energy do electrons deposit in the ECal? What about Kaons?
+> 1. Above which transverse momentum are we reconstructing tracks in the IDEA Delphes scenario?
+>
+> 2. How many hits are required to accept a track? 
+>
+> 3. What fraction of their energy do electrons deposit in the ECal? What about neutral Kaons?
 > 
+> 4. Which gas mixture does the `ClusterCounting` module assume by default?
+>
+> 5. QUESTION ABOUT TOF 
+> 
+> 6. What is the photon identification efficiency, and over what phase space does it apply?
 > <details><summary><strong> ✅ Solutions: </strong></summary>
 > <br> 
-> This is the answer
 >
+> 1. The tracking efficiency for particles with pT > 100 MeV is assumed to reach 100% for charged hadrons, electrons and muons as can be read off from the lines 156, 174 and 191 in the respective `TrackingEfficiency` module initialisations.
+>
+> 2. In the `TrackSmearing` module setup in line 291 a minimum of 6 hits is set. 
+>
+> 3. Electrons deposit 100% of their energy in the ECal, for neutral Kaons ($K^0_S$, $K^0_L$) it's 30%, cf. lines 553 and 567f. 
+> 
+> 4. `GasOption` 0, which corresponds to 90% Helium / 10% Isobutane, cf. l418.
+>
+> 5. QUESTION ABOUT TOF 
+> 
+> 6. Photons with energy ≥ 2 GeV are identified with 99% efficiency, both in the barrel region (|η| ≤ 0.88) and in the endcap region (0.88 < |η| ≤ 3.0), cf. l671f. 
 >
 > </details></details>
 <br>
