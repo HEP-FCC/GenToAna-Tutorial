@@ -7,29 +7,46 @@ is e+e- -> mu+ mu- H and not e+e- -> Z H.
 ## Environment setup
 
 Everything needed (WHIZARD, Pythia8, the Key4hep/Gaudi tools) comes from the
-Key4hep stack:
+[Key4hep](https://key4hep.github.io/key4hep-doc/) stack — a shared software
+stack for generation, simulation, reconstruction, and analysis, developed
+jointly across several future-collider projects (FCC, CEPC, ILC, EIC) so
+they don't each maintain their own separate framework:
 
-```
+```bash
 source /cvmfs/sw.hsf.org/key4hep/setup.sh
 ```
+
+Key4hep only supports bash for this — there's no `.csh`/`.tcsh` variant of
+`setup.sh`. If your login shell is csh/tcsh, start a nested bash session
+first (just run `bash`) and source the setup script inside that instead;
+your original csh session is unaffected (no subshell can modify its
+parent's environment) and stays there until you `exit` the bash session.
 
 (`/cvmfs/fcc.cern.ch/sw/latest/setup.sh` provides the same Key4hep stack
 plus FCC-specific tools on top.)
 
+Key4hep bundles several e+e- event generators, not just WHIZARD and
+Pythia8: also Herwig3, Sherpa, KKMCee (precision QED processes like Bhabha
+scattering and muon pairs), MadGraph5_aMC@NLO, and EvtGen (heavy-flavour
+hadron decays). WHIZARD is used for this signal process because it computes
+the full e+e- -> mu mu H matrix element directly, with correct multi-particle
+kinematics and spin correlations — other generators are better suited to
+other processes (e.g. KKMCee for high-precision QED benchmarks).
+
 ## Step 1: WHIZARD - hard process
 
-Check WHIZARD is available:
+Check WHIZARD is available (and, via its path, that the right stack
+release was sourced) and see its version:
 
-```
+```bash
 which whizard
+whizard --version
 ```
 
 WHIZARD has no complete, supported interface to Pythia8 — only to the
-legacy PYTHIA6 (per the
-[WHIZARD manual](https://whizard.hepforge.org/manual.pdf): the "Parton
-shower and hadronization from PYTHIA8" section is an empty stub, and the
-documented `$shower_method` values are only `"WHIZARD"` and `"PYTHIA6"`).
-So this step only generates the hard process and writes it out as LHEf;
+legacy PYTHIA6 (see the
+[WHIZARD manual](https://whizard.hepforge.org/manual.pdf)). So this step
+only generates the hard process and writes it out as LHEf;
 showering, hadronization, and the H -> b b decay all happen as an explicit
 separate step in Pythia8 (Step 2 below), rather than inside WHIZARD itself.
 
@@ -67,7 +84,7 @@ simulate (mumuH) { $sample = "mumuH" }
 
 Run it in its own directory:
 
-```
+```bash
 mkdir -p test_whizard/mumuH && cd test_whizard/mumuH
 cp ../../mumuH.sin .
 whizard mumuH.sin
@@ -85,9 +102,8 @@ relying on their WHIZARD defaults:
   beam particles into the LHE record as extra entries, which breaks
   reading the file into Pythia8 downstream — the
   [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) explicitly
-  warns against this ("in order to read Les Houches accord event files
-  into PYTHIA, no beam particles are allowed"). `?keep_remnants` only has
-  any effect when `?keep_beams = true`, so it's inert either way here.
+  warns against this. `?keep_remnants` only has any effect when
+  `?keep_beams = true`, so it's inert either way here.
 
 ### Why mu mu H, not Z H?
 
@@ -101,11 +117,20 @@ don't be surprised the muons have no Z parent in the event record.
 ## Step 2: Pythia8 - shower, hadronize, decay H -> b b
 
 FCC-ee tooling doesn't call Pythia8 as a bare standalone binary — it goes
-through the Gaudi components in
+through [Gaudi](https://gitlab.cern.ch/gaudi/Gaudi), the component-based
+software framework (originally from LHCb/ATLAS, now widely reused across
+HEP) that Key4hep is built on. Gaudi programs are assembled from
+Algorithms, Tools, and Services wired together in a Python "steering
+script"; `k4run` is Key4hep's command-line tool for running these scripts.
+Here that means the Gaudi components in
 [`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
-`GenAlg`), run with `k4run`, the same framework used later for Delphes and
-FCCAnalyses. `PythiaInterface` reads a `.cmd` card, which can point at an
-external LHE file, as in `k4Gen`'s own
+`GenAlg`) — the same framework used later for Delphes in `Sim/ee`.
+(`Analysis`, further downstream, uses
+[FCCAnalyses](https://github.com/HEP-FCC/FCCAnalyses) instead, run via its
+own `fccanalysis` command rather than `k4run`/Gaudi — it connects to this
+chain only via the shared EDM4hep file format, not the framework.)
+`PythiaInterface` reads a `.cmd` card, which can point at an external LHE
+file, as in `k4Gen`'s own
 [`data/Pythia_LHEinput.cmd`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/data/Pythia_LHEinput.cmd)
 example.
 
@@ -147,10 +172,8 @@ LesHouches:matchInOut = off
 > 235.5-239.7 GeV instead of a fixed 240, with occasional non-zero net
 > transverse momentum), but the radiated photon itself is classified by
 > the [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) as a
-> "beam remnant" ("for ISR and/or beamstrahlung spectra, the radiated
-> photons are considered as beam remnants") and — with
-> `?keep_beams = false` — isn't written into the event record. This
-> doesn't affect this tutorial's two
+> beam remnant and — with `?keep_beams = false` — isn't written into the
+> event record. This doesn't affect this tutorial's two
 > measurements (mu mu recoil mass, H -> b b dijet mass — both driven by
 > the visible mu/mu/b/bbar kinematics, which already reflect the
 > ISR-induced recoil), but it does mean there's no possibility of
@@ -159,8 +182,15 @@ LesHouches:matchInOut = off
 Steering script [`pythia_mumuH.py`](pythia_mumuH.py), adapted from
 `k4Gen`'s own
 [`options/pythia.py`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/options/pythia.py)
-example — reads the card above and writes EDM4hep rather than plain HepMC
-(`HepMCFileWriter`'s own docstring says plain HepMC is for debugging, not
+example — reads the card above and writes
+[EDM4hep](https://github.com/key4hep/EDM4hep) rather than plain HepMC.
+EDM4hep is Key4hep's common Event Data Model: a shared, columnar data
+format (built on [Podio](https://github.com/AIDASoft/podio)) for storing
+particles, hits, tracks, and reconstructed objects, so that generation,
+simulation, reconstruction, and analysis stages can all read and write the
+same files instead of each using their own custom format — it's what lets
+`Sim/ee` and `Analysis` consume this stage's output directly. Plain HepMC
+is used only for debugging (`HepMCFileWriter`'s own docstring says so, not
 event storage). Beamspot vertex/time smearing is applied via the Gaudi
 `GaussSmearVertex` tool wired into `GenAlg`, rather than Pythia8's own
 `Beams:allowVertexSpread`, which would apply it a second time on top of
@@ -218,7 +248,7 @@ iosvc.Output = "mumuH_Hbb.root"
 
 Copy both files next to the LHE file produced in Step 1 and run:
 
-```
+```bash
 cp ../../mumuH_Hbb.cmd ../../pythia_mumuH.py .
 k4run pythia_mumuH.py
 ```
@@ -231,81 +261,6 @@ hadronized, H -> b b decayed event record, in an `MCParticles` collection.
 [`key4hep/k4SimDelphes`](https://github.com/key4hep/k4SimDelphes) — that
 component takes a generic `edm4hep::MCParticleCollection` as input,
 independent of how it was produced.
-
-## Open TODOs
-
-- **Background samples** — undecided whether this tutorial includes any
-  background processes alongside the mumuH signal, and if so how they'd be
-  generated. One tentative idea floated: generate backgrounds with pure
-  Pythia8 (no WHIZARD step), since Pythia8 alone can produce e.g. generic
-  qqbar/WW/ZZ final states without needing WHIZARD's matrix-element
-  machinery. Not decided or attempted.
-- **Jupyter notebook export** — Jupyter itself was ruled out as the primary
-  authoring format (too complicated with FCCAnalyses, per planning notes),
-  but a one-way export of this markdown material to `.ipynb` (e.g. via
-  [`jupytext`](https://jupytext.readthedocs.io/)) could still be useful for
-  students who'd rather work in a notebook. Not attempted — would need some
-  markup convention to mark which fenced code blocks are meant to be
-  executable Python cells versus illustrative shell/Sindarin/Pythia8-card
-  snippets, since jupytext doesn't know the difference on its own.
-- **Syntax highlighting for WHIZARD/Pythia8 files** — neither WHIZARD's
-  Sindarin (`.sin`) format nor Pythia8's `.cmd` cards have a grammar in
-  GitHub's Linguist (so no fenced-code-block language tag lights them up on
-  GitHub) or an existing VSCodium/VSCode extension. Writing a small custom
-  TextMate grammar for one or both (packaged as a minimal VSCodium
-  extension, or bundled in this repo) would fix local editing at least;
-  GitHub rendering would still fall back to a closest-fit generic tag (e.g.
-  `ini`-ish for the Pythia8 cards) or plain text. Not started.
-
-`mumuH_Hbb.cmd` leaves several PYTHIA6-only settings from the reference
-production configuration (see References) unported, since PYTHIA6 and
-Pythia8 don't always define equivalent-sounding parameters the same way —
-porting the tuned numbers directly would risk introducing wrong physics.
-The approach instead is to match which *feature* was enabled and use
-Pythia8's own default values for how it behaves:
-
-- **Bose-Einstein correlations** — left off (Pythia8 default). It only
-  affects identical-boson pairs (pions/kaons), not muons, so the mu mu
-  recoil mass is unaffected; for the H -> b b dijet mass it's at most a
-  small within-jet momentum redistribution, since the
-  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
-  describes the algorithm as designed to conserve overall jet 4-momentum.
-- **Long-lived particle stability** — left off (Pythia8 default). The
-  reference PYTHIA6 configuration uses a cylindrical decay-vertex-position
-  cutoff (`MSTJ(22)=4`), not a proper-lifetime one — per the
-  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html),
-  the actual analog is `ParticleDecays:limitCylinder`, not
-  `ParticleDecays:limitTau0`. At FCC-ee energies, K_S0/Lambda decay well
-  within that cylinder anyway, so Pythia8's default behaviour (its own
-  built-in per-particle lifetime threshold, which also decays K_S0/Lambda)
-  already matches.
-- **Fragmentation function for b/c quarks** — no change needed: the
-  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
-  states that for massive quarks, the Bowler modification to the Lund
-  fragmentation function (PYTHIA6's `MSTJ(11)=3`) is already the default.
-- **Higgs mass and width** — no change: Pythia8's own default (125.0 GeV,
-  4.08 MeV width) already closely matches the reference configuration's
-  125 GeV / 4.143 MeV.
-- **Lund `a`/`b`/`sigma` and diquark/meson-multiplet tune** — left at
-  Pythia8's own defaults (`StringZ:aLund`/`bLund`, `StringPT:sigma`,
-  `StringFlav:...`, per the
-  [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)):
-  these are baseline numeric tuning parameters Pythia8 always applies
-  some value for, not on/off features, so cross-code numeric equivalence
-  isn't assumed. For reference, the PYTHIA6 configuration's Lund a/b
-  (0.11/0.52) differ substantially from Pythia8's defaults (0.68/0.98) —
-  a real tune difference, not just an unset default.
-- **Tau decay** — no external tool used (the reference configuration
-  defers tau decay to an external tool like TAUOLA for correct
-  spin/polarization correlations). Taus do appear in this chain (not from
-  the forced H -> b b decay, but from semitauonic B-hadron decays after
-  the b/bbar hadronize, at the ~2-3%-per-B branching level), but they're
-  secondary objects inside b-jets, and neither of this tutorial's
-  measurements is sensitive to tau polarization, so Pythia8's own native
-  tau decay treatment is adequate. `PythiaInterface`'s `doEvtGenDecays`
-  option (currently off) would route B-hadron decays through EvtGen
-  instead of Pythia8's built-in table if more precise modeling is ever
-  needed.
 
 ## References
 
@@ -325,3 +280,5 @@ Pythia8's own default values for how it behaves:
 
 The showered, H -> b b decayed sample (`mumuH_Hbb.root`) is the input to
 Delphes fast simulation with the FCC-ee IDEA card — see `Sim/ee`.
+
+See [`TODO.md`](TODO.md) for open items not yet resolved in this stage.
