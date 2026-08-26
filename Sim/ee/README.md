@@ -103,19 +103,20 @@ Next, lets look at the `Delphes` card to see how the fast simulation works. For 
 
 
 - Two further measurements needed for particle identification (PID) are modelled next: energy loss from ionization in the drift chamber, via the `ClusterCounting` module, and time-of-flight, via the `TimeOfFlight` module.
-  - The cluster counting method relies on counting the primary ionization clusters a charged particle produces when traversing a gaseous detector, such as, in our case, the IDEA drift chamber, in order to infer the particle's mass: the number of observed clusters per unit length, dN/dx, depends on the particle's velocity. Combined with the momentum already obtained from the track fit, we can determine the mass and therefore the particle identity. The `ClusterCounting` module simulates exactly this measurement in the typical Delphes fast simulation approach. Rather than modelling the underlying physical interactions between the particle and the gas in detail, the module uses pre-computed tables giving the average cluster density as a function of velocity for a chosen gas mixture. It multiplies that average density by the track's path length through the drift chamber volume to get a mean expected cluster count, then draws the actual simulated count from a Poisson distribution around that mean for each track. 
-  - Time of flight 
+  - The cluster counting method relies on counting the primary ionization clusters a charged particle produces when traversing a gaseous detector, such as, in our case, the IDEA drift chamber, in order to infer the particle's mass: the number of observed clusters per unit length, dN/dx, depends on the particle's velocity. Combined with the momentum already obtained from the track fit, we can determine the mass and therefore the particle identity. The `ClusterCounting` module simulates exactly this measurement in the typical Delphes fast simulation fashion. Rather than modelling the underlying physical interactions between the particle and the gas in detail, the module uses pre-computed tables giving the average cluster density as a function of velocity for a chosen gas mixture. It multiplies that average density by the track's path length through the drift chamber volume to get a mean expected cluster count, then draws the actual simulated count from a Poisson distribution around that mean for each track. 
+  - A second, complementary measurement providing PID information is the time of flight measurement. Again, together with the momentum, measuring the time it takes a given particle to cover a known distance allows to determine the particle's mass. The `TimeOfFlight` module implements this using the path length and momentum already available from the `TrackCovariance` calculation, together with a timing measurement from the `TimeSmearing` module. Just like a hit position measurement has a finite resolution determined by the detector design and sensor technologies, the time of flight can also only be measured to some finite precision. This is modelled by applying a Gaussian smearing to  the true simulated time, with the width of the Gaussian defined in the card. Computing the mass from the time of flight also requires knowing the particle's production time at the vertex. In the IDEA simulation, this is taken directly from MC truth for charged particles, and set to zero for neutral particles. 
 
+- For simulating the calorimeter response, a segmentation in &eta; and &phi; is given in the `Calorimeter` module, and it is assumed that each particle deposits its energy into one of these segments (then called a tower). This module also specifies which fraction of a particle's energy is deposited in the electromagnetic and hadronic calorimeter. The energy deposits in the electromagnetic and hadronic calorimeters are then smeared independently, following parametrizations in energy and pseudo-rapidity, as defined in the card. You can see the exact form of these parametrizations visualised [here](figures/idea_calo_resolution.png).
 
-  TODO FILL THIS IN PROPERLY. INCLUDE ALSO PID (CLUSTERCOUNTING, TOF EXPLANATION). END WITH PICKING UP BOTH NEUTRALS AND CHARGED AGAIN AT THE CALOS FOR NEXT STEP 
+- *Particle-flow* objects are then built by merging tracks with the photon and neutral-hadron objects reconstructed by the calorimeter, forming our physics objects. The idea behind particle flow is to use whichever subdetector measures each particle best — tracks for the momenta of charged particles, since tracker resolution is typically far superior to calorimeter resolution, and calorimeter deposits for neutral particles, which leave no track — rather than relying on calorimeter energy alone. This step happens directly inside the `Calorimeter` module, which returns tracks, as well as photon and neutral hadrons candidates. The `EFlowTrackMerger` and `EFlowMerger` modules that follow simply combine everything into single unified collection again.
 
-- For simulating the calorimeter response, a segmentation in &eta; and &phi; is given in the `Calorimeter` module, and it is assumed that each particle deposits its energy into one of such segments (then called a tower). This module also specifies which fraction of a particle's energy is deposited in the electromagnetic and hadronic calorimeter. The energy deposits in the electromagnetic and hadronic calorimeters are then smeared independently, following parametrizations in energy and pseudo-rapidity, as defined in the card. 
+- *Identification efficiency* parametrizations model the fact that a real detector doesn't reconstruct every particle perfectly: even within geometric acceptance, some genuine photons, electrons, or muons are missed due to reconstruction and identification inefficiencies. These are defined per particle species — for example in the `PhotonEfficiency` module. For electrons and muons, this efficiency is applied multiplicatively on top of the tracking efficiency already modelled earlier in the chain; for photons, since they are neutral, `PhotonEfficiency` is the only efficiency applied.
 
-- *Particle-flow* objects are then built from the tracks and calorimeter towers, forming our physics objects.  IS THIS TRUE? ADD MORE INFO
-
-- *Identification efficiency* parametrizations are defined for objects of interest such as photons, muons and electrons, for example in the `PhotonEfficiency` module. These efficiencies are applied on top of the tracking efficiencies. Furthermore, for these objects an isolation variable (named `PTRatioMax` in the card) is defined in e.g. `ElectronIsolation`. 
+<!-- Furthermore, for these objects an isolation variable (named `PTRatioMax` in the card) is defined in e.g. `ElectronIsolation`.  -->
 
 - The last block of the card, the `TreeWriter` module, shows you which objects are propagated to Delphes output level. Note that this doesn't mean we will have them in our `.root` file that we created above, as there is still one step in our simulation chain, which is the conversion from `Delphes` output to `EDM4HEP` events. 
+
+*Note*: You will see that some modules for jet clustering and modelling flavour tagging efficiencies as well as lepton and photon isolation are run as well. However, these baseline algorithms are not very well optimized and are therefore not used in physics analyses, which typically run their own methods instead. We do not discuss them further here, as they are part of the next section of the tutorial on the physics analysis. 
 
 ### Task 2 : Understand the Delphes card
 Look through the Delphes card and try to answer the following questions with the help of the guide above: 
@@ -127,12 +128,12 @@ Look through the Delphes card and try to answer the following questions with the
 > 1. Above which transverse momentum are we reconstructing tracks in the IDEA Delphes scenario?
 >
 > 2. How many hits are required to accept a track? 
->
-> 3. What fraction of their energy do electrons deposit in the ECal? What about neutral Kaons?
 > 
-> 4. Which gas mixture does the `ClusterCounting` module assume by default?
+> 3. Which gas mixture does the `ClusterCounting` module assume by default?
 >
-> 5. QUESTION ABOUT TOF 
+> 4. What timing resolution is assumed in the time of flight measurement? 
+>
+> 5. What fraction of their energy do electrons deposit in the ECal? What about neutral Kaons?
 > 
 > 6. What is the photon identification efficiency, and over what phase space does it apply?
 > <details><summary><strong> ✅ Solutions: </strong></summary>
@@ -141,22 +142,80 @@ Look through the Delphes card and try to answer the following questions with the
 > 1. The tracking efficiency for particles with pT > 100 MeV is assumed to reach 100% for charged hadrons, electrons and muons as can be read off from the lines 156, 174 and 191 in the respective `TrackingEfficiency` module initialisations.
 >
 > 2. In the `TrackSmearing` module setup in line 291 a minimum of 6 hits is set. 
->
-> 3. Electrons deposit 100% of their energy in the ECal, for neutral Kaons ($K^0_S$, $K^0_L$) it's 30%, cf. lines 553 and 567f. 
 > 
-> 4. `GasOption` 0, which corresponds to 90% Helium / 10% Isobutane, cf. l418.
+> 3. `GasOption` 0, which corresponds to 90% Helium / 10% Isobutane, cf. l418.
 >
-> 5. QUESTION ABOUT TOF 
+> 4. A constant time resolution of 30 ps is set for the `TimeSmearing` of charged particles and the `TimeSmearingNeutrals`, cf. l433 and l598.
 > 
+> 5. Electrons deposit 100% of their energy in the ECal, for neutral Kaons ($K^0_S$, $K^0_L$) it's 30%, cf. lines 553 and 567f. 
+>
 > 6. Photons with energy ≥ 2 GeV are identified with 99% efficiency, both in the barrel region (|η| ≤ 0.88) and in the endcap region (0.88 < |η| ≤ 3.0), cf. l671f. 
+>
 >
 > </details></details>
 <br>
 
-## Understanding edm4hep datamodel collections
+## Understanding EDM4HEP datamodel collections
 
-### Task 3 : Changing the PID settings 
-TO DO ! COME UP WITH TASK ! MAYBE AN OPTIONAL TASK GIVEN THE TIME? SHOULD COMBINE THE EDM4HEP PART AND THE DELPEHS PART!
+To wrap up this part of the tutorial, let's take a look at the `.root` output file we produced. You can open and inspect it as usual — the tree is called `events`. It follows the `EDM4HEP` data model, a common event data model convention for future collider experiments — in other words, a shared format for what information is stored per event and how exactly. In detail the format looks like this:
+
+![edm4hep data model](figures/edm4hep_diagram.svg)
+
+If you are doing analysis, you will mostly be interested in the `ReconstructedParticle` collection, which contains all objects reconstructed from the detector responses such as tracks and calorimeter clusters, with the `ParticleID` collection telling us the (likely) type of particle. You can take a look at some of the raw distributions here already, to convince yourself that you actually wrote out some events — the next part of the tutorial will walk you through a full analysis built on top of these files.
+
+The event data model of `EDM4HEP` is given in this [`.yaml` file](https://github.com/key4hep/EDM4hep/blob/v01-00/edm4hep.yaml) (pinned to the version used by our `key4hep` release, `2026-04-08`). If you look at the block starting at l581, you can see what information we have available on our `ReconstructedParticle`s.
+
+Which `EDM4HEP` collections actually get written to our output file, and under what name, is configured separately from the Delphes card itself, in `edm4hep_IDEA.tcl`:
+
+```
+module EDM4HepOutput EDM4HepOutput {
+add ReconstructedParticleCollections EFlowTrack EFlowPhoton EFlowNeutralHadron
+add GenParticleCollections Particle
+add JetCollections Jet
+add MuonCollections Muon
+add ElectronCollections Electron
+add PhotonCollections Photon
+set RecoParticleCollectionName ReconstructedParticles
+set MCRecoAssociationCollectionName MCRecoAssociations
+}
+```
+
+
+Can you match each of these collections back to the Delphes branch/module it comes from, using what you found in Task 2?
+
+*Note*: You produced an `EDM4HEP` file in the previous tutorial on event generation already. How is it different from the one we produced here?
+
+### Task 3: Extend the EDM4HEP output
+
+Since we're looking at $e^+e^- \to ZH \to \mu^+\mu^- b\bar{b}$ events, we expect at least two muons per event from the $Z$ decay. Add a *second* muon collection to the `EDM4HEP` output, pointing to the muon candidates *before* the identification-efficiency cut is applied, and compare its per-event multiplicity to the existing `Muon` collection.
+
+> <details><summary><strong>💡 Hint: where to look</strong></summary>
+> <br>
+> You'll need to touch two files. First, find the module in the Delphes card that selects candidate muons by truth PDG code, before any efficiency requirement is applied, and add a new `TreeWriter` branch pointing to it. Then add that new branch as a second entry under `MuonCollections` in `edm4hep_IDEA.tcl`. Rerun the `k4run` Gaudi step with a new/adapated steering file afterwards to regenerate the new output file. You can use the command line option `-n <number>` to restrict the number of events processed to smaller amount for quicker run time, since this is just a quick test file we will not be needing further. 
+> </details>
+
+> <details><summary><strong>💡 Hint: checking the result without plotting</strong></summary>
+> <br>
+> If you don't want to make a histogram, you can check the per-event collection sizes directly in an interactive ROOT session. Note that `Muon` and your new collection are subset collections — they only store index references into `ReconstructedParticles`, so a direct `.size()` call won't work. Instead, use ROOT's `@` syntax on the index branch, e.g.:
+>
+> ```
+> root [0] TFile *f = TFile::Open("your_output.root");
+> root [1] TTree *events = (TTree*)f->Get("events");
+> root [2] events->Scan("Muon_objIdx@.size():MuonRaw_objIdx@.size()")
+> ```
+> This prints both counts side by side, event by event.
+> </details>
+
+> <details><summary><strong>✅ Solution</strong></summary>
+> <br>
+>
+> `k4run solutions/delphes_IDEA_mumuH_allMuons.py -n 100`
+>
+> The pre-efficiency filter selects muon candidates purely by MC truth PDG code, with no efficiency cut applied. The default `Muon` collection then reflects the identification efficiency parametrization we discussed above. Comparing the two collection sizes gives you a direct, visible measurement of that efficiency — since we expect at least two true muons per event here, you should be able to see the ~99%-efficiency-above-threshold logic show up as occasional events where `MuonRaw` has more entries than `Muon`. 
+> </details>
+
+<!-- ADVANCED TASK OPTION ### Task 3 : Changing the PID settings 
+CHANGE THE TIMING RESOLUTION, REPRODUCE THE FILE, AND USE BOTH IN THE ANA STEP TO PLOT MTOF  -->
 
 
 
