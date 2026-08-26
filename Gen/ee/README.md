@@ -108,14 +108,23 @@ relying on their WHIZARD defaults:
   warns against this. `?keep_remnants` only has any effect when
   `?keep_beams = true`, so it's inert either way here.
 
-### Why mu mu H, not Z H?
+<details open>
+<summary><strong>❓ Question:</strong></summary>
 
-WHIZARD is asked to generate e+e- -> mu+ mu- H directly, rather than
-e+e- -> Z H with Z -> mu mu. The final state looks the same, but the
-generator-level parent history doesn't: in the mu mu H process the two
-muons' parent particles are the incoming e+/e-, not a Z boson. This matters
-downstream once students truth-match particles in the Analysis stage —
-don't be surprised the muons have no Z parent in the event record.
+WHIZARD generates e+e- -> mu+ mu- H directly. Why not e+e- -> Z H with
+Z -> mu mu instead — isn't the final state identical?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+The final state looks the same, but the generator-level parent history
+doesn't: in the mu mu H process the two muons' parent particles are the
+incoming e+/e-, not a Z boson. This matters downstream once students
+truth-match particles in the Analysis stage — don't be surprised the
+muons have no Z parent in the event record.
+
+</details>
+</details>
 
 ## Step 2: Pythia8 - shower, hadronize, decay H -> b b
 
@@ -168,6 +177,28 @@ LesHouches:matchInOut = off
 ! defaults already give the desired behaviour for both; see
 ! Gen/ee/README.md's Open TODOs.
 ```
+
+<details open>
+<summary><strong>❓ Question:</strong></summary>
+
+The card sets `PartonLevel:ISR = off` but leaves `PartonLevel:FSR` on
+(Pythia8's default). Shouldn't initial- and final-state radiation be
+treated the same way?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+No — they solve different problems here. WHIZARD's `isr_handler` in
+Step 1 already applied the initial-state radiation, as an energy
+redistribution on the beam momenta, so Pythia8's own initial-state
+shower would double-count it if left on. FSR is different: the LHE
+file from Step 1 has the Higgs *undecayed*, and Pythia8's final-state
+shower is what both decays H -> b b and showers the resulting b/bbar
+before hadronization. Turn it off and the b/bbar go straight into
+string fragmentation with zero shower.
+
+</details>
+</details>
 
 > **The ISR photon isn't present in the output.** WHIZARD's ISR treatment
 > correctly reduces the visible mu mu H system's kinematics to reflect the
@@ -248,6 +279,29 @@ ApplicationMgr().TopAlg += [hepmc_converter]
 iosvc = IOSvc()
 iosvc.Output = "mumuH_Hbb.root"
 ```
+
+<details open>
+<summary><strong>❓ Question:</strong></summary>
+
+The script sets `pythia8gen.ErrorMax = 20`. What do you think happens if
+this were left at Gaudi's default, `ErrorMax = 1`, when generating a
+large sample — say 10,000 events?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+A small fraction of events (roughly 1 in a few thousand) hit a
+Pythia8-level failure that retrying doesn't recover from — for example
+an energy-momentum conservation check. With `ErrorMax = 1`, a single
+such event aborts the *entire* run, not just that one event. A quick
+1,000-event test run usually won't hit this at all, which is exactly
+why it's easy to miss — the problem only shows up once you actually
+generate a realistic number of events. Raising `ErrorMax` lets Gaudi
+skip a handful of individually-unrecoverable events and keep going
+instead.
+
+</details>
+</details>
 
 Copy both files next to the LHE file produced in Step 1 and run:
 
