@@ -96,16 +96,17 @@ Next, lets look at the `Delphes` card to see how the fast simulation works. For 
 
   $$S_{ij} = \sigma_i^2\,\delta_{ij} + M_{ij}.$$
 
-  Here $\sigma_i^2$ is simply layer $i$'s hit resolution, while $M_{ij}$ is a correlation term built up from the multiple scattering at every layer crossed before layers $i$ and $j$ — this is where each layer's material budget enters. No random sampling is needed to get $C$ itself; it comes out of this single analytic calculation.
-
-The track resolution achieved in this way therefore isn't the result of a hand-tuned function of $\eta$ and $p_T$. It just falls out naturally from the actual detector layout: tracks at small polar angles pass through more material and fewer effective measurement layers, so their resolution degrades in exactly the way it would in the real detector, without needing a separate resolution-vs-$p_T$/$\eta$ formula to mimic that behavior.
+  Here $\sigma_i^2$ is simply layer $i$'s hit resolution, while $M_{ij}$ is a correlation term built up from the multiple scattering at every layer crossed before layers $i$ and $j$ — this is where each layer's material budget enters. No random sampling is needed to get $C$ itself; it comes out of this single analytic calculation. The track resolution achieved in this way therefore isn't the result of a hand-tuned function of $\eta$ and $p_T$. It just falls out naturally from the actual detector layout: tracks at small polar angles pass through more material and fewer effective measurement layers, so their resolution degrades in exactly the way it would in the real detector, without needing a separate resolution-vs-$p_T$/$\eta$ formula to mimic that behavior.
   
   <!-- Instead of smearing a track's momentum with a simple formula, this module encodes the layer-by-layer description of the IDEA tracker: the vertex detector barrels and disks, all 112 drift-chamber sense-wire layers with their alternating stereo angles, the silicon wrapper, and the solenoid coil. Each layer is assigned a radiation length (material budget) and, if it's an active measurement layer, a hit position resolution. Given a track's true trajectory through this geometry, the module analytically propagates a full track-parameter covariance matrix outward through the material stack, accumulating the multiple-scattering contribution from each passive layer and the measurement uncertainty from each active layer as it goes. The track resolution achieved in this way does therefore not depend on hand-tuned functions of η and pT, but emerges self-consistently from the actual detector layout: tracks at small polar angles pass through more material and fewer effective measurement layers, so their resolution degrades in exactly the way it would in the real detector, without that behavior having to be programmed in explicitly.
    -->
 
 
-- Additionally, two measurements needed for the particle identification (PID) 
-  
+- Two further measurements needed for particle identification (PID) are modelled next: energy loss from ionization in the drift chamber, via the `ClusterCounting` module, and time-of-flight, via the `TimeOfFlight` module.
+  - The cluster counting method relies on counting the primary ionization clusters a charged particle produces when traversing a gaseous detector, such as, in our case, the IDEA drift chamber, in order to infer the particle's mass: the number of observed clusters per unit length, dN/dx, depends on the particle's velocity. Combined with the momentum already obtained from the track fit, we can determine the mass and therefore the particle identity. The `ClusterCounting` module simulates exactly this measurement in the typical Delphes fast simulation approach. Rather than modelling the underlying physical interactions between the particle and the gas in detail, the module uses pre-computed tables giving the average cluster density as a function of velocity for a chosen gas mixture. It multiplies that average density by the track's path length through the drift chamber volume to get a mean expected cluster count, then draws the actual simulated count from a Poisson distribution around that mean for each track. 
+  - Time of flight 
+
+
   TODO FILL THIS IN PROPERLY. INCLUDE ALSO PID (CLUSTERCOUNTING, TOF EXPLANATION). END WITH PICKING UP BOTH NEUTRALS AND CHARGED AGAIN AT THE CALOS FOR NEXT STEP 
 
 - For simulating the calorimeter response, a segmentation in &eta; and &phi; is given in the `Calorimeter` module, and it is assumed that each particle deposits its energy into one of such segments (then called a tower). This module also specifies which fraction of a particle's energy is deposited in the electromagnetic and hadronic calorimeter. The energy deposits in the electromagnetic and hadronic calorimeters are then smeared independently, following parametrizations in energy and pseudo-rapidity, as defined in the card. 
@@ -156,9 +157,6 @@ Look through the Delphes card and try to answer the following questions with the
 
 ### Task 3 : Changing the PID settings 
 TO DO ! COME UP WITH TASK ! MAYBE AN OPTIONAL TASK GIVEN THE TIME? SHOULD COMBINE THE EDM4HEP PART AND THE DELPEHS PART!
-
-
-
 
 
 
