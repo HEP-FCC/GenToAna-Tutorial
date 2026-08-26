@@ -62,6 +62,9 @@ process mumuH = e1, E1 => e2, E2, H
 
 beams = e1, E1 => gaussian => isr
 
+# Beam energy spread (sigma, as a fraction of nominal beam energy) - not
+# the same as beam-spot (vertex position) smearing, which is done later
+# in Step 2's Pythia8 steering script.
 gaussian_spread1 = 0.185%
 gaussian_spread2 = 0.185%
 
