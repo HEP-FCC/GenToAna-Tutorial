@@ -1,6 +1,6 @@
 ! Reads the WHIZARD LHE output from Step 1 and forces H -> b b. Vertex/time
 ! smearing is done separately in the Gaudi steering script
-! (pythia_mumuH.py), not here.
+! (pythia_gen.py), not here.
 
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
