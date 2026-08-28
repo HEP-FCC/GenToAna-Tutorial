@@ -8,10 +8,19 @@ ApplicationMgr().EvtSel = 'NONE'
 ApplicationMgr().EvtMax = 1000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
-# Beamspot vertex/time smearing (FCC-ee IDEA values, from FCC-config's
-# p8_ee_default.cmd Beams:sigmaVertex{X,Y,Z}/sigmaTime). Done here via the
-# Gaudi VertexSmearingTool rather than Pythia8's own Beams:allowVertexSpread,
-# so it isn't applied twice.
+# Writes the EventHeader collection (run/event number) expected by
+# downstream tools - without it, readers just skip it with a warning, but
+# it's cheap to provide and some tools (e.g. Sim/ee's legacy PodioInput)
+# look for it.
+from Configurables import EventHeaderCreator
+eventHeaderCreator = EventHeaderCreator("eventHeaderCreator")
+ApplicationMgr().TopAlg += [eventHeaderCreator]
+
+# Beamspot vertex/time smearing (FCC-ee IDEA values), applied consistently
+# to every sample generated with this script, via the Gaudi
+# VertexSmearingTool rather than each Pythia8 card's own
+# Beams:allowVertexSpread (which would either double-apply it, for cards
+# that also set their own, or not apply it at all, for cards that don't).
 from Configurables import GaussSmearVertex
 smeartool = GaussSmearVertex()
 smeartool.xVertexSigma = 5.96e-3 * units.mm
@@ -19,6 +28,11 @@ smeartool.yVertexSigma = 23.8e-6 * units.mm
 smeartool.zVertexSigma = 0.397 * units.mm
 smeartool.tVertexSigma = 10.89 * units.mm
 
+# Default: the mumuH_Hbb signal card/output. Override both for other
+# samples (e.g. the WW/ZZ backgrounds in backgrounds.md) via k4run's CLI
+# property overrides, no file edits needed:
+#   k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=<card>.cmd \
+#                        --IOSvc.Output=<output>.root
 from Configurables import PythiaInterface
 pythia8gentool = PythiaInterface()
 pythia8gentool.pythiacard = "mumuH_Hbb.cmd"

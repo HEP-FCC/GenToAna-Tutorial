@@ -13,8 +13,12 @@ jointly across several future-collider projects (FCC, CEPC, ILC, EIC) so
 they don't each maintain their own separate framework:
 
 ```bash
-source /cvmfs/sw.hsf.org/key4hep/setup.sh
+source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2026-04-08
 ```
+
+This tutorial is pinned to the `2026-04-08` release rather than the
+rolling `latest-opt` build, since the next Key4hep release isn't expected
+to be ready in time.
 
 Key4hep only supports bash for this — there's no `.csh`/`.tcsh` variant of
 `setup.sh`. If your login shell is csh/tcsh, start a nested bash session
@@ -73,12 +77,21 @@ $isr_handler_mode = "recoil"
 isr_alpha         = 0.0072993
 isr_mass          = 0.000511
 
-# Production-quality precision (slow to integrate live):
-# integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
-# Classroom default (faster, lower precision):
-integrate (mumuH) { iterations = 3:2000:"gw" }
+# Production-quality precision. This dominates the whole run time
+# regardless of n_events below (it's the cost of building the phase-space
+# integration grids, done once, not per event) - about 90s here, vs ~7s
+# for the faster, lower-precision alternative below.
+integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
+# Faster, lower-precision alternative for quick iteration/testing:
+# integrate (mumuH) { iterations = 3:2000:"gw" }
 
-n_events = 1000
+# Generate a few more events than Step 2 actually reads (EvtMax = 1000
+# there): Pythia8's LHEF reader silently returns empty events for the
+# last handful of records when the file's event count exactly matches
+# EvtMax, since its retry-on-failure logic (Main:timesAllowErrors) just
+# keeps hitting end-of-file. A small margin avoids ever reaching that
+# boundary.
+n_events = 1010
 
 $lhef_version  = "3.0"
 sample_format  = lhef
@@ -108,14 +121,23 @@ relying on their WHIZARD defaults:
   warns against this. `?keep_remnants` only has any effect when
   `?keep_beams = true`, so it's inert either way here.
 
-### Why mu mu H, not Z H?
+<details open>
+<summary><strong>❓ Question:</strong></summary>
 
-WHIZARD is asked to generate e+e- -> mu+ mu- H directly, rather than
-e+e- -> Z H with Z -> mu mu. The final state looks the same, but the
-generator-level parent history doesn't: in the mu mu H process the two
-muons' parent particles are the incoming e+/e-, not a Z boson. This matters
-downstream once students truth-match particles in the Analysis stage —
-don't be surprised the muons have no Z parent in the event record.
+WHIZARD generates e+e- -> mu+ mu- H directly. Why not e+e- -> Z H with
+Z -> mu mu instead — isn't the final state identical?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+The final state looks the same, but the generator-level parent history
+doesn't: in the mu mu H process the two muons' parent particles are the
+incoming e+/e-, not a Z boson. This matters downstream once students
+truth-match particles in the Analysis stage — don't be surprised the
+muons have no Z parent in the event record.
+
+</details>
+</details>
 
 ## Step 2: Pythia8 - shower, hadronize, decay H -> b b
 
@@ -142,7 +164,7 @@ The card, [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
 ```
 ! Reads the WHIZARD LHE output from Step 1 and forces H -> b b. Vertex/time
 ! smearing is done separately in the Gaudi steering script
-! (pythia_mumuH.py), not here.
+! (pythia_gen.py), not here.
 
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
@@ -169,6 +191,28 @@ LesHouches:matchInOut = off
 ! Gen/ee/README.md's Open TODOs.
 ```
 
+<details open>
+<summary><strong>❓ Question:</strong></summary>
+
+The card sets `PartonLevel:ISR = off` but leaves `PartonLevel:FSR` on
+(Pythia8's default). Shouldn't initial- and final-state radiation be
+treated the same way?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+No — they solve different problems here. WHIZARD's `isr_handler` in
+Step 1 already applied the initial-state radiation, as an energy
+redistribution on the beam momenta, so Pythia8's own initial-state
+shower would double-count it if left on. FSR is different: the LHE
+file from Step 1 has the Higgs *undecayed*, and Pythia8's final-state
+shower is what both decays H -> b b and showers the resulting b/bbar
+before hadronization. Turn it off and the b/bbar go straight into
+string fragmentation with zero shower.
+
+</details>
+</details>
+
 > **The ISR photon isn't present in the output.** WHIZARD's ISR treatment
 > correctly reduces the visible mu mu H system's kinematics to reflect the
 > radiated energy (its total energy varies event-by-event, roughly
@@ -182,7 +226,7 @@ LesHouches:matchInOut = off
 > ISR-induced recoil), but it does mean there's no possibility of
 > reconstructing an ISR photon downstream in `Sim/ee`/`Analysis`.
 
-Steering script [`pythia_mumuH.py`](pythia_mumuH.py), adapted from
+Steering script [`pythia_gen.py`](pythia_gen.py), adapted from
 `k4Gen`'s own
 [`options/pythia.py`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/options/pythia.py)
 example — reads the card above and writes
@@ -197,7 +241,10 @@ is used only for debugging (`HepMCFileWriter`'s own docstring says so, not
 event storage). Beamspot vertex/time smearing is applied via the Gaudi
 `GaussSmearVertex` tool wired into `GenAlg`, rather than Pythia8's own
 `Beams:allowVertexSpread`, which would apply it a second time on top of
-this:
+this. This script is also reused as-is for the WW/ZZ background samples in
+[`backgrounds.md`](backgrounds.md) — the card and output filename are its
+only two process-specific lines, both overridable at the command line
+(shown below), so one script covers every sample generated this way:
 
 ```python
 from Gaudi.Configuration import *
@@ -210,9 +257,19 @@ ApplicationMgr().EvtSel = 'NONE'
 ApplicationMgr().EvtMax = 1000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
-# Beamspot vertex/time smearing (FCC-ee IDEA values). Done here via the
-# Gaudi VertexSmearingTool rather than Pythia8's own Beams:allowVertexSpread,
-# so it isn't applied twice.
+# Writes the EventHeader collection (run/event number) expected by
+# downstream tools - without it, readers just skip it with a warning, but
+# it's cheap to provide and some tools (e.g. Sim/ee's legacy PodioInput)
+# look for it.
+from Configurables import EventHeaderCreator
+eventHeaderCreator = EventHeaderCreator("eventHeaderCreator")
+ApplicationMgr().TopAlg += [eventHeaderCreator]
+
+# Beamspot vertex/time smearing (FCC-ee IDEA values), applied consistently
+# to every sample generated with this script, via the Gaudi
+# VertexSmearingTool rather than each Pythia8 card's own
+# Beams:allowVertexSpread (which would either double-apply it, for cards
+# that also set their own, or not apply it at all, for cards that don't).
 from Configurables import GaussSmearVertex
 smeartool = GaussSmearVertex()
 smeartool.xVertexSigma = 5.96e-3 * units.mm
@@ -220,6 +277,11 @@ smeartool.yVertexSigma = 23.8e-6 * units.mm
 smeartool.zVertexSigma = 0.397 * units.mm
 smeartool.tVertexSigma = 10.89 * units.mm
 
+# Default: the mumuH_Hbb signal card/output. Override both for other
+# samples (e.g. the WW/ZZ backgrounds in backgrounds.md) via k4run's CLI
+# property overrides, no file edits needed:
+#   k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=<card>.cmd \
+#                        --IOSvc.Output=<output>.root
 from Configurables import PythiaInterface
 pythia8gentool = PythiaInterface()
 pythia8gentool.pythiacard = "mumuH_Hbb.cmd"
@@ -249,11 +311,34 @@ iosvc = IOSvc()
 iosvc.Output = "mumuH_Hbb.root"
 ```
 
+<details open>
+<summary><strong>❓ Question:</strong></summary>
+
+The script sets `pythia8gen.ErrorMax = 20`. What do you think happens if
+this were left at Gaudi's default, `ErrorMax = 1`, when generating a
+large sample — say 10,000 events?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+A small fraction of events (roughly 1 in a few thousand) hit a
+Pythia8-level failure that retrying doesn't recover from — for example
+an energy-momentum conservation check. With `ErrorMax = 1`, a single
+such event aborts the *entire* run, not just that one event. A quick
+1,000-event test run usually won't hit this at all, which is exactly
+why it's easy to miss — the problem only shows up once you actually
+generate a realistic number of events. Raising `ErrorMax` lets Gaudi
+skip a handful of individually-unrecoverable events and keep going
+instead.
+
+</details>
+</details>
+
 Copy both files next to the LHE file produced in Step 1 and run:
 
 ```bash
-cp ../../mumuH_Hbb.cmd ../../pythia_mumuH.py .
-k4run pythia_mumuH.py
+cp ../../mumuH_Hbb.cmd ../../pythia_gen.py .
+k4run pythia_gen.py
 ```
 
 This produces `mumuH_Hbb.root`, an EDM4hep file with the showered,
@@ -284,4 +369,6 @@ independent of how it was produced.
 The showered, H -> b b decayed sample (`mumuH_Hbb.root`) is the input to
 Delphes fast simulation with the FCC-ee IDEA card — see `Sim/ee`.
 
-See [`TODO.md`](TODO.md) for open items not yet resolved in this stage.
+See [`TODO.md`](TODO.md) for open items not yet resolved in this stage,
+and [`backgrounds.md`](backgrounds.md) for an optional side task
+generating the two largest backgrounds (WW, ZZ).

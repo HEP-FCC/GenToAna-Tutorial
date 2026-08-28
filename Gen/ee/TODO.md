@@ -1,11 +1,11 @@
 # Gen - FCC-ee: Open TODOs
 
-- **Background samples** — undecided whether this tutorial includes any
-  background processes alongside the mumuH signal, and if so how they'd be
-  generated. One tentative idea floated: generate backgrounds with pure
-  Pythia8 (no WHIZARD step), since Pythia8 alone can produce e.g. generic
-  qqbar/WW/ZZ final states without needing WHIZARD's matrix-element
-  machinery. Not decided or attempted.
+- **Background samples** — WW and ZZ (the two largest backgrounds) are now
+  covered as an optional side task, see [`backgrounds.md`](backgrounds.md);
+  both generated with pure Pythia8 (no WHIZARD step needed). Still open:
+  whether/how this tutorial folds these into the main flow (e.g. does
+  `Analysis` actually use them for anything, or are they just a generation
+  exercise) versus leaving them as a standalone side task.
 - **Jupyter notebook export** — Jupyter itself was ruled out as the primary
   authoring format (too complicated with FCCAnalyses, per planning notes),
   but a one-way export of this markdown material to `.ipynb` (e.g. via
