@@ -1,7 +1,8 @@
 # Gen - FCC-ee: Open TODOs
 
 - **Background samples** — WW and ZZ (the two largest backgrounds) are now
-  covered as an optional side task, see [`backgrounds.md`](backgrounds.md);
+  covered as an optional side task, see
+  [`solutions/backgrounds.md`](solutions/backgrounds.md);
   both generated with pure Pythia8 (no WHIZARD step needed). Still open:
   whether/how this tutorial folds these into the main flow (e.g. does
   `Analysis` actually use them for anything, or are they just a generation
@@ -21,7 +22,8 @@
   TextMate grammar for one or both (packaged as a minimal VSCodium
   extension, or bundled in this repo) would fix local editing at least;
   GitHub rendering would still fall back to a closest-fit generic tag (e.g.
-  `ini`-ish for the Pythia8 cards) or plain text. Not started.
+  `ini`-ish for the Pythia8 cards) or plain text. In progress, in a separate
+  project (not this repo).
 
 `mumuH_Hbb.cmd` leaves several PYTHIA6-only settings from the reference
 production configuration (see `README.md`'s References) unported, since

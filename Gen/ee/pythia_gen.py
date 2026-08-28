@@ -5,13 +5,11 @@ from edm4hep import labels as e4_labels
 from Configurables import EventDataSvc
 from k4FWCore import ApplicationMgr, IOSvc
 ApplicationMgr().EvtSel = 'NONE'
-ApplicationMgr().EvtMax = 1000
+ApplicationMgr().EvtMax = 10000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
 # Writes the EventHeader collection (run/event number) expected by
-# downstream tools - without it, readers just skip it with a warning, but
-# it's cheap to provide and some tools (e.g. Sim/ee's legacy PodioInput)
-# look for it.
+# downstream tools.
 from Configurables import EventHeaderCreator
 eventHeaderCreator = EventHeaderCreator("eventHeaderCreator")
 ApplicationMgr().TopAlg += [eventHeaderCreator]
@@ -28,11 +26,9 @@ smeartool.yVertexSigma = 23.8e-6 * units.mm
 smeartool.zVertexSigma = 0.397 * units.mm
 smeartool.tVertexSigma = 10.89 * units.mm
 
-# Default: the mumuH_Hbb signal card/output. Override both for other
-# samples (e.g. the WW/ZZ backgrounds in backgrounds.md) via k4run's CLI
+# Default: the mumuH_Hbb signal card. Can be overridden via k4run's CLI
 # property overrides, no file edits needed:
-#   k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=<card>.cmd \
-#                        --IOSvc.Output=<output>.root
+#   k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=<card>.cmd
 from Configurables import PythiaInterface
 pythia8gentool = PythiaInterface()
 pythia8gentool.pythiacard = "mumuH_Hbb.cmd"
@@ -45,9 +41,8 @@ pythia8gen.hepmc.Path = "hepmc"
 # A small fraction of events (~1 in a few thousand) hit an unrecoverable
 # Pythia8-level failure (e.g. energy-momentum conservation check) that
 # retrying doesn't fix. Without raising this, Gaudi's default ErrorMax = 1
-# means a single such event aborts the whole run - only shows up at scale
-# (not in a 1000-event test). ErrorMax = 20 lets a handful be skipped
-# instead. Deprecated on some Gaudi versions but still functional.
+# means a single such event aborts the whole run. ErrorMax = 20 lets a
+# handful be skipped instead.
 pythia8gen.ErrorMax = 20
 ApplicationMgr().TopAlg += [pythia8gen]
 
@@ -59,4 +54,6 @@ hepmc_converter.GenParticles.Path = e4_labels.MCParticles
 ApplicationMgr().TopAlg += [hepmc_converter]
 
 iosvc = IOSvc()
+# Output location can be overridden via:
+#   k4run pythia_gen.py --IOSvc.Output=<output>.root
 iosvc.Output = "mumuH_Hbb.root"
