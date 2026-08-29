@@ -11,7 +11,7 @@ podioevent = k4DataSvc("EventDataSvc")
 podioevent.input = "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/gen/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root"
 
 inp = PodioInput("InputReader")
-inp.collections = ["MCParticles"]
+inp.collections = ["MCParticles", "EventHeader"]
 
 from Configurables import k4SimDelphesAlg
 delphesalg = k4SimDelphesAlg()

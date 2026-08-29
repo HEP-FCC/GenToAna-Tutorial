@@ -17,7 +17,7 @@ Let us walk-through the different parameters we have to set in the steering file
 
 For the input section we have:
 - `podioevent.input` sets the path of the input files, so fill in the location of your output file from the previous step here. 
-- `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the generator level particles written out by `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. 
+- `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the generator level particles written out by `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. In addition to the generator-level particles, it's good practice to also include the `EventHeader` collection here. This carries basic per-event bookkeeping (like event and run numbers) through from the generator-level file into your reconstructed output, which can be useful for debugging if needed.
 
 Next, we load and configure the Delphes algorithm we want to run. In particular we use `k4SimDelphes`, this is an implementation of Delphes in the `Key4hep` environment that directly converts the output to `EDM4hep`. If you are interested, you can find more information about it [here](https://key4hep.github.io/key4hep-doc/main/tutorials/k4simdelphes/doc/starterkit/k4SimDelphes/Readme.html). In terms of settings to fill in we have here:
 - `delphesalg.DelphesCard` specifies which Delphes card we want to use. A Delphes card is a plain-text `(.tcl)` configuration file that defines a specific detector's parametrized response — its geometry, resolutions, and reconstruction efficiencies. Because that parametrization lives entirely in the card, swapping in a different one lets you simulate a different detector from the same generator-level input easily, which is the real strength of the fast-sim approach. We will use the baseline FCC-ee IDEA detector card. It comes pre-installed with the `Key4hep` software stack, and you can find the main card under: `$DELPHES_DIR/cards/delphes_card_IDEA.tcl`
@@ -155,7 +155,6 @@ To wrap up this part of the tutorial, let's take a look at the `.root` output fi
 If you are doing analysis, you will mostly be interested in the `ReconstructedParticle` collection, which contains all objects reconstructed from the detector responses such as tracks and calorimeter clusters, with the `ParticleID` collection telling us the (likely) type of particle. You can take a look at some of the raw distributions here already, to convince yourself that you actually wrote out some events — the next part of the tutorial will walk you through a full analysis built on top of these files.
 
 The event data model of `EDM4hep` is given in this [`.yaml` file](https://github.com/key4hep/EDM4hep/blob/v01-00/edm4hep.yaml) (pinned to the version used by our `Key4hep` release, `2026-04-08`). If you look at the block starting at l581, you can see what information we have available on our `ReconstructedParticle`s.
-
 Which `EDM4hep` collections actually get written to our output file, and under what name, is configured separately from the Delphes card itself, in `edm4hep_IDEA.tcl`:
 
 ```
@@ -171,10 +170,12 @@ set MCRecoAssociationCollectionName MCRecoAssociations
 }
 ```
 
+Can you match each of these collections back to the Delphes branch/module it comes from, using what you found in Task 2? 
 
-Can you match each of these collections back to the Delphes branch/module it comes from, using what you found in Task 2?
+You produced an `EDM4hep` file in the previous tutorial on event generation already. How is it different from the one we produced here?
 
-*Note*: You produced an `EDM4hep` file in the previous tutorial on event generation already. How is it different from the one we produced here?
+Besides the physics objects, every `EDM4hep` file also carries the above mentioned `EventHeader` collection. This holds per-event metadata rather than physics content: event and run numbers, and event weights (e.g. for parameter or systematic variations). 
+When working with data, this field contains crucial information on e.g. the run number, which ties an event to specific detector and calibration conditions, and to data-quality selections. In simulated samples like ours run numbers are less meaningful, though sometimes repurposed to label a sample or parameter point. Event number and event weights are especially useful in MC however. Event weights are what you'd use for reweighting studies or propagating systematic variations, and event numbers can be very helpful for debugging or cross-referencing, for example for studying the overlap of selections between different decay channels feeding into a combined result. 
 
 ### Task 3: Extend the EDM4hep output
 
