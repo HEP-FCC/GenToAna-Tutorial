@@ -16,7 +16,7 @@ A skeleton of such a steering file is provided in `delphes_mumuH_IDEA.py`. You c
 Let us walk-through the different parameters we have to set in the steering file. 
 
 For the input section we have:
-- `podioevent.input` sets the path of the input files, so fill in the location of your output file from the previous step here. 
+- `podioevent.input` sets the path of the input files, so fill in the location of your output file from the previous step here. *Note:* If you didn't complete the previous step, find the files in question here: `/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/gen/`.
 - `inp.collections` defines the list of collections we want to read from our input. Given that we have only run generation & showering so far, these are simply the generator level particles written out by `Pythia8`. You can take a look at the content of your produced file with `podio-dump <your_edm4hep_events.root>` to see what collection name you need to fill in here. In addition to the generator-level particles, it's good practice to also include the `EventHeader` collection here. This carries basic per-event bookkeeping (like event and run numbers) through from the generator-level file into your reconstructed output, which can be useful for debugging if needed.
 
 Next, we load and configure the Delphes algorithm we want to run. In particular we use `k4SimDelphes`, this is an implementation of Delphes in the `Key4hep` environment that directly converts the output to `EDM4hep`. If you are interested, you can find more information about it [here](https://key4hep.github.io/key4hep-doc/main/tutorials/k4simdelphes/doc/starterkit/k4SimDelphes/Readme.html). In terms of settings to fill in we have here:
