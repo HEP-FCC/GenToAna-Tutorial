@@ -214,11 +214,23 @@ The common thread across all of these is: pick one detector design parameter, ch
 
 You don't need to attempt all of the ideas below — pick whichever one sounds most interesting to you, or the one closest to your own physics interests.
 
-Since time is very short, for each task section we provide helper script, `plotting_advanced_tasks_<system>.py`, to produce the comparison plots of the relevant quantities. Feel free to use those out of the box to get quick answers, or just as an inspiration and guide to write your own `EDM4hep` file reader. 
+Since time is very short, for each task section we provide a helper script, `plotting_advanced_tasks_<system>.py`, to produce the comparison plots of the relevant quantities. Feel free to use those out of the box to get quick answers, or just as an inspiration and guide to write your own `EDM4hep` file reader. There are of course other approaches to checking the impact as well. Since every card variant is run over the same generator-level input file, the `eventNumber` in `EventHeader` lets you match the *same* physics event across two output files and directly compare how it was reconstructed differently, for example. 
 
-
-- **Tracking system:**
+- **Tracking:**
   - **Remove the innermost vertex layer.** In the `TrackSmearing` module's `DetectorGeometry` block, delete the first `VTXLOW` line (the one at the smallest radius). What would you expect to happen to the impact parameter resolution? Rerun the simulation and compare the track impact parameter `D0` between the two files to check your prediction. Does this have any implications for flavour tagging?
   - **Raise the minimum hit requirement.** Change `NMinHits` in the `TrackSmearing` module from its default of 6 to something much higher, e.g. 25. Which tracks would you expect to be affected most, and why? Rerun the simulation and compare the reconstructed track `eta` distribution between the two files to check your prediction.
   - **Lower the magnetic field.** Change `B` at the top of the card from 2.0 T to, e.g., 0.5 T. What would you expect to happen to the track $p_T$ resolution, and why? Rerun the simulation and compare $\sigma_{p_T}/p_T$ (computed from the track's own covariance matrix) between the two files to check your prediction.
 
+- - **Particle identification:**
+  - **Change the PID configuration.** In the `ClusterCounting` module, change `GasOption` from its default of 0 (90% Helium / 10% Isobutane) to 3 (100% Argon). In both the `TimeSmearing` and `TimeSmearingNeutrals` modules, change the constant time resolution from 30 ps to 100 ps. Since neither change affects the inputs the other depends on, you can make both edits in the same card and rerun once. What would you expect to happen to the number of clusters counted per track (stored in `EFlowTrack_dNdx`), and why? What would you expect to happen to the reconstructed time-of-flight mass ($m_{\text{TOF}}$) for charged tracks, and why? Rerun the simulation and compare your new output against the baseline to check your predictions.
+
+
+## Resources and further reading
+- [Key4hep documentation](https://key4hep.github.io/key4hep-doc/main/index.html)
+- [Delphes paper](https://arxiv.org/abs/1307.6346)
+- [Delphes source code](https://github.com/delphes/delphes)
+- [k4SimDelphes source code](https://github.com/key4hep/k4SimDelphes)
+- [The IDEA detector concept for FCC-ee](https://arxiv.org/abs/2502.21223)
+- [Jet flavour identification with fast simulation for FCC-ee](https://arxiv.org/abs/2202.03285) (paper introducing `TrackCovariance`, `ClusterCounting` and `TimeOfFlight` methods for `Delphes`)
+- [EDM4hep documentation](https://edm4hep.web.cern.ch/)
+- [EDM4hep source code / schema](https://github.com/key4hep/EDM4hep)

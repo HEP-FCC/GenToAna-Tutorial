@@ -1,4 +1,4 @@
-# Simulation/analysis output
+# Output files
 *.root
 
 # Python cache
