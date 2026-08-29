@@ -221,7 +221,7 @@ Since time is very short, for each task section we provide a helper script, `plo
   - **Raise the minimum hit requirement.** Change `NMinHits` in the `TrackSmearing` module from its default of 6 to something much higher, e.g. 25. Which tracks would you expect to be affected most, and why? Rerun the simulation and compare the reconstructed track `eta` distribution between the two files to check your prediction.
   - **Lower the magnetic field.** Change `B` at the top of the card from 2.0 T to, e.g., 0.5 T. What would you expect to happen to the track $p_T$ resolution, and why? Rerun the simulation and compare $\sigma_{p_T}/p_T$ (computed from the track's own covariance matrix) between the two files to check your prediction.
 
-- - **Particle identification:**
+- **Particle identification:**
   - **Change the PID configuration.** In the `ClusterCounting` module, change `GasOption` from its default of 0 (90% Helium / 10% Isobutane) to 3 (100% Argon). In both the `TimeSmearing` and `TimeSmearingNeutrals` modules, change the constant time resolution from 30 ps to 100 ps. Since neither change affects the inputs the other depends on, you can make both edits in the same card and rerun once. What would you expect to happen to the number of clusters counted per track (stored in `EFlowTrack_dNdx`), and why? What would you expect to happen to the reconstructed time-of-flight mass ($m_{\text{TOF}}$) for charged tracks, and why? Rerun the simulation and compare your new output against the baseline to check your predictions.
 
 
