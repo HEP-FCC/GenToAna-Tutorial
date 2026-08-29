@@ -7,6 +7,6 @@ module EDM4HepOutput EDM4HepOutput {
     add ElectronCollections              Electron
     add PhotonCollections                Photon
     set RecoParticleCollectionName       ReconstructedParticles
-    set MCRecoAssociationCollectionName  MCRecoAssociations
+    set RecoMCParticleLinkCollection  MCRecoAssociations
 } 
 
