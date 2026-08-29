@@ -1,41 +1,58 @@
-# Gen - FCC-ee
+# FCC-ee: Event generation
 
-WHIZARD generates the hard process e+e- -> mu+ mu- H, then Pythia8 showers,
-hadronizes, and decays H -> b b. See the callout below for why the process
-is e+e- -> mu+ mu- H and not e+e- -> Z H.
+In this tutorial section we will illustrate how to generate events using
+Key4hep software stack and FCC infrastructure build around it. MC generator
+WHIZARD generates the hard process $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$,
+then Pythia8 showers, hadronizes, and decays $H \rightarrow b \bar{b}$.
+
 
 ## Environment setup
 
 Everything needed (WHIZARD, Pythia8, the Key4hep/Gaudi tools) comes from the
-[Key4hep](https://key4hep.github.io/key4hep-doc/) stack — a shared software
-stack for generation, simulation, reconstruction, and analysis, developed
-jointly across several future-collider projects (FCC, CEPC, ILC, EIC) so
-they don't each maintain their own separate framework:
+[Key4hep](https://key4hep.github.io/key4hep-doc/) stack, which is a shared
+software stack for generation, simulation, reconstruction, and analysis,
+developed jointly across several future-collider projects (FCC, EIC, CEPC, ILC)
+so they don't each maintain their own separate framework:
 
+```bash
+source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2026-04-08
+```
+
+This tutorial is pinned to the `2026-04-08` release, to see all available
+stacks use plain `-r` parameter. This tutorial should also work in the latest
+Key4hep stack which you can get by running:
 ```bash
 source /cvmfs/sw.hsf.org/key4hep/setup.sh
 ```
 
-Key4hep only supports bash for this — there's no `.csh`/`.tcsh` variant of
-`setup.sh`. If your login shell is csh/tcsh, start a nested bash session
-first (just run `bash`) and source the setup script inside that instead;
-your original csh session is unaffected (no subshell can modify its
-parent's environment) and stays there until you `exit` the bash session.
+> Notes:
+> 1. Key4hep only supports Bash shell at the moment.
+>
+> 2. Apart from AlmaLinux 9, Key4hep stack also supports Ubuntu 24.04 and/or
+>    26.04.
+>
+> 3. There is also `/cvmfs/fcc.cern.ch/sw/latest/setup.sh` setup script, which
+>    provides the same Key4hep stack plus FCC-specific tools on top.
 
-(`/cvmfs/fcc.cern.ch/sw/latest/setup.sh` provides the same Key4hep stack
-plus FCC-specific tools on top.)
+Key4hep bundles also other $e^{+}e^{-}$ capable event generators, not just
+WHIZARD (a multi-particle matrix-element generator with automated NLO
+capabilities) and Pythia8 (general-purpose parton shower, hadronization, and
+decay generator, also capable of generating simple hard processes directly):
+also Herwig 7 (general-purpose, with its own angular-ordered shower and cluster
+hadronization model), Sherpa (general-purpose, known for automated multi-jet
+merging), KKMCee (precision QED processes like Bhabha scattering and muon
+pairs), MadGraph5_aMC@NLO (automated LO/NLO matrix-element generator across many
+SM/BSM processes), and EvtGen (heavy-flavour hadron decays).
 
-Key4hep bundles several e+e- event generators, not just WHIZARD and
-Pythia8: also Herwig3, Sherpa, KKMCee (precision QED processes like Bhabha
-scattering and muon pairs), MadGraph5_aMC@NLO, and EvtGen (heavy-flavour
-hadron decays). WHIZARD is used for this signal process because it computes
-the full e+e- -> mu mu H matrix element directly, with correct multi-particle
-kinematics and spin correlations — other generators are better suited to
-other processes (e.g. KKMCee for high-precision QED benchmarks).
+WHIZARD is used for this signal process because it computes the full $e^{+}e^{-}
+\rightarrow \mu^{+} \mu^{-} H$ matrix element directly, with correct
+multi-particle kinematics and spin correlations — other generators are better
+suited to other processes (e.g. KKMCee for high-precision QED benchmarks).
+
 
 ## Step 1: WHIZARD - hard process
 
-Check WHIZARD is available (and, via its path, that the right stack
+Check whether WHIZARD is available (and, via its path, that the right stack
 release was sourced) and see its version:
 
 ```bash
@@ -46,9 +63,10 @@ whizard --version
 WHIZARD has no complete, supported interface to Pythia8 — only to the
 legacy PYTHIA6 (see the
 [WHIZARD manual](https://whizard.hepforge.org/manual.pdf)). So this step
-only generates the hard process and writes it out as LHEf;
-showering, hadronization, and the H -> b b decay all happen as an explicit
-separate step in Pythia8 (Step 2 below), rather than inside WHIZARD itself.
+only generates the hard process and writes it out as LHEf file format;
+showering, hadronization, and the $H \rightarrow b \bar{b}$ decay all happen
+as an explicit separate step in Pythia8 (Step 2 below), rather than inside
+WHIZARD itself.
 
 The card, [`mumuH.sin`](mumuH.sin):
 
@@ -73,19 +91,23 @@ $isr_handler_mode = "recoil"
 isr_alpha         = 0.0072993
 isr_mass          = 0.000511
 
-# Production-quality precision (slow to integrate live):
-# integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
-# Classroom default (faster, lower precision):
-integrate (mumuH) { iterations = 3:2000:"gw" }
+# Configure the precision of matrix element integration
+integrate (mumuH) { iterations = 10:100000:"gw", 5:200000:"" }
+# Faster, lower-precision alternative for quick iteration/testing:
+# integrate (mumuH) { iterations = 3:2000:"gw" }
 
-n_events = 1000
+# Generate a few more events than Step 2 actually reads (EvtMax = 10000
+# there), to make sure it has enough events despite a few failures.
+n_events = 10020
 
+# Select which output format and its version to use
 $lhef_version  = "3.0"
 sample_format  = lhef
 simulate (mumuH) { $sample = "mumuH" }
 ```
 
-Run it in its own directory:
+Run it in its own directory, as WHIZARD produces a lot of additional helper
+files:
 
 ```bash
 mkdir -p test_whizard/mumuH && cd test_whizard/mumuH
@@ -98,51 +120,69 @@ This produces `mumuH.lhe`.
 Two settings are deliberately left out rather than pinned explicitly,
 relying on their WHIZARD defaults:
 
-- **`mH` (Higgs mass)** — not set, because WHIZARD's `SM` model already
-  defaults it to 125 GeV (`parameter mH = 125` in `SM.mdl`).
-- **`?keep_beams` / `?keep_remnants`** — not set, relying on their
-  defaults (`false` and `true`). `?keep_beams = true` writes the original
-  beam particles into the LHE record as extra entries, which breaks
-  reading the file into Pythia8 downstream — the
-  [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) explicitly
-  warns against this. `?keep_remnants` only has any effect when
-  `?keep_beams = true`, so it's inert either way here.
+> Notes:
+> 1. Higgs mass `mH` is not set, because WHIZARD's `SM` model already defaults
+>    it to 125 GeV (`parameter mH = 125` in `SM.mdl`).
+> 2. We do not keep beam and beam remnants particles, as writing the original
+>    beam particles into the LHE record as extra entries breaks reading the
+>    file into Pythia8 downstream, see
+>    [WHIZARD manual](https://whizard.hepforge.org/manual.pdf).
 
-### Why mu mu H, not Z H?
+<details open>
+<summary><strong>❓ Question:</strong></summary>
 
-WHIZARD is asked to generate e+e- -> mu+ mu- H directly, rather than
-e+e- -> Z H with Z -> mu mu. The final state looks the same, but the
-generator-level parent history doesn't: in the mu mu H process the two
-muons' parent particles are the incoming e+/e-, not a Z boson. This matters
-downstream once students truth-match particles in the Analysis stage —
-don't be surprised the muons have no Z parent in the event record.
+WHIZARD generates $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$ directly. Why
+not $e^{+}e^{-} \rightarrow Z H$ with $Z \rightarrow \mu^{+} \mu^{-}$
+instead — isn't the final state identical?
 
-## Step 2: Pythia8 - shower, hadronize, decay H -> b b
+<details>
+<summary><strong>✅ Answer:</strong></summary>
 
-FCC-ee tooling doesn't call Pythia8 as a bare standalone binary — it goes
-through [Gaudi](https://gitlab.cern.ch/gaudi/Gaudi), the component-based
-software framework (originally from LHCb/ATLAS, now widely reused across
-HEP) that Key4hep is built on. Gaudi programs are assembled from
+WHIZARD computes the complete matrix element for the exact final state
+directly, rather than treating it as production ($e^{+}e^{-} \rightarrow Z
+H$) followed by a separate, on-shell $Z \rightarrow \mu^{+} \mu^{-}$
+decay. WHIZARD does support that factorized "cascade decay" mode too, and
+it can retain full spin correlations between production and decay, but it
+still restricts the intermediate boson to being on-shell, discarding the
+true Breit-Wigner off-shell tails and any other diagrams contributing to
+the same final state that don't proceed through that resonance ([WHIZARD
+reference paper](https://arxiv.org/abs/0708.4233), Section 6.6). At
+$\sqrt{s} = 240$ GeV there's only about 24 GeV of phase space left over the
+$H + Z$ mass threshold, so the $Z$'s few-GeV width has a non-negligible
+effect on the exact lineshape.
+
+</details>
+</details>
+
+
+## Step 2: Pythia8 - shower, hadronize, decay $H \rightarrow b \bar{b}$
+
+Key4hep tooling doesn't provide Pythia8 as a bare standalone binary, instead
+it wraps it into a [Gaudi](https://gitlab.cern.ch/gaudi/Gaudi) algorithm. Gaudi
+is a component-based software framework (originally from LHCb/ATLAS, now widely
+reused across HEP) that Key4hep is built on. Gaudi programs are assembled from
 Algorithms, Tools, and Services wired together in a Python "steering
 script"; `k4run` is Key4hep's command-line tool for running these scripts.
-Here that means the Gaudi components in
-[`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
-`GenAlg`) — the same framework used later for Delphes in `Sim/ee`.
-(`Analysis`, further downstream, uses
-[FCCAnalyses](https://github.com/HEP-FCC/FCCAnalyses) instead, run via its
-own `fccanalysis` command rather than `k4run`/Gaudi — it connects to this
-chain only via the shared EDM4hep file format, not the framework.)
-`PythiaInterface` reads a `.cmd` card, which can point at an external LHE
-file, as in `k4Gen`'s own
-[`data/Pythia_LHEinput.cmd`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/data/Pythia_LHEinput.cmd)
-example.
 
-The card, [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
+> Notes:
+> 1. To get a list of all available commandline arguments which one can use to
+>    adjust the steering script use:
+>    ```bash
+>    k4run steering_script.py --help
+>    ```
+> 2. Gaudi components of the Key4hep ecosystem are spread through many
+>    packages, here we primarily use the Gaudi components from
+>    [`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
+>    `GenAlg`).
+
+`PythiaInterface` reads a `.cmd` card, which can point at an external LHEf
+file. The card to decay the Higgs into $b\bar{b}$ pair, hadronizes and does the
+showering looks like this [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
 
 ```
-! Reads the WHIZARD LHE output from Step 1 and forces H -> b b. Vertex/time
+! Reads the WHIZARD LHEf output from Step 1 and forces H -> b b. Vertex/time
 ! smearing is done separately in the Gaudi steering script
-! (pythia_mumuH.py), not here.
+! (pythia_gen.py), not here.
 
 ! Read in the WHIZARD LHEf file
 Beams:frameType = 4
@@ -150,11 +190,7 @@ Beams:LHEF = mumuH.lhe
 Beams:setProductionScalesFromLHEF = off
 Beams:allowMomentumSpread = off
 
-! ISR already handled by WHIZARD's isr_handler in Step 1 - keep off here to
-! avoid double-counting radiation. FSR stays on (Pythia8 default): per the
-! Pythia8 manual's PartonLevel:FSRinResonances flag, this is what actually
-! showers the H -> b b decay products before hadronization - with it off,
-! b/bbar go straight into string fragmentation with zero shower.
+! Keep initial state radiation off.
 PartonLevel:ISR = off
 
 Check:epTolErr = 1e-1
@@ -163,41 +199,46 @@ LesHouches:matchInOut = off
 ! Force H -> b b
 25:onMode  = off
 25:onIfAny = 5
-
-! No long-lived-particle or Bose-Einstein settings here - Pythia8's
-! defaults already give the desired behaviour for both; see
-! Gen/ee/README.md's Open TODOs.
 ```
 
-> **The ISR photon isn't present in the output.** WHIZARD's ISR treatment
-> correctly reduces the visible mu mu H system's kinematics to reflect the
-> radiated energy (its total energy varies event-by-event, roughly
-> 235.5-239.7 GeV instead of a fixed 240, with occasional non-zero net
-> transverse momentum), but the radiated photon itself is classified by
-> the [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) as a
-> beam remnant and — with `?keep_beams = false` — isn't written into the
-> event record. This doesn't affect this tutorial's two
-> measurements (mu mu recoil mass, H -> b b dijet mass — both driven by
-> the visible mu/mu/b/bbar kinematics, which already reflect the
-> ISR-induced recoil), but it does mean there's no possibility of
-> reconstructing an ISR photon downstream in `Sim/ee`/`Analysis`.
+<details open>
+<summary><strong>❓ Question:</strong></summary>
 
-Steering script [`pythia_mumuH.py`](pythia_mumuH.py), adapted from
-`k4Gen`'s own
-[`options/pythia.py`](https://github.com/key4hep/k4Gen/blob/main/k4Gen/options/pythia.py)
-example — reads the card above and writes
-[EDM4hep](https://github.com/key4hep/EDM4hep) rather than plain HepMC.
+The card sets `PartonLevel:ISR = off` but leaves `PartonLevel:FSR` on
+(Pythia8's default). Shouldn't initial- and final-state radiation be
+treated the same way?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+Since we turn on WHIZARD's `isr_handler` in Step 1. It already applied the
+initial-state radiation, as an energy redistribution on the beam momenta, so
+Pythia8's own initial-state shower would double-count it if left on. FSR is
+different: the LHE file from Step 1 has the Higgs *undecayed*, and Pythia8's
+final-state shower is what both decays $H \rightarrow b \bar{b}$ and showers the
+resulting $b/\bar{b}$ before hadronization. Turn it off and the $b/\bar{b}$ go
+straight into string fragmentation with zero shower.
+
+</details>
+</details>
+
+Steering script [`pythia_gen.py`](pythia_gen.py) reads the card above and writes
+[EDM4hep](https://github.com/key4hep/EDM4hep) already rather than plain HepMC3.
 EDM4hep is Key4hep's common Event Data Model: a shared, columnar data
 format (built on [Podio](https://github.com/AIDASoft/podio)) for storing
 particles, hits, tracks, and reconstructed objects, so that generation,
 simulation, reconstruction, and analysis stages can all read and write the
 same files instead of each using their own custom format — it's what lets
-`Sim/ee` and `Analysis` consume this stage's output directly. Plain HepMC
-is used only for debugging (`HepMCFileWriter`'s own docstring says so, not
-event storage). Beamspot vertex/time smearing is applied via the Gaudi
-`GaussSmearVertex` tool wired into `GenAlg`, rather than Pythia8's own
-`Beams:allowVertexSpread`, which would apply it a second time on top of
-this:
+[`Sim/ee`](../../Sim/ee/README.md) and `Analysis` consume this stage's output directly. It's also possible
+to output HepMC3, which might be useful for debugging (using `HepMCFileWriter`)
+Beamspot vertex/time smearing is applied via the Gaudi `GaussSmearVertex` tool
+wired into `GenAlg`, rather than Pythia8's own `Beams:allowVertexSpread`, which
+would apply it a second time on top of this.
+
+This script is also reused as-is for the WW/ZZ background samples in
+[`solutions/backgrounds.md`](solutions/backgrounds.md) — the card and output filename are its
+only two process-specific lines, both overridable at the command line
+(shown below), so one script covers every sample generated this way:
 
 ```python
 from Gaudi.Configuration import *
@@ -207,12 +248,20 @@ from edm4hep import labels as e4_labels
 from Configurables import EventDataSvc
 from k4FWCore import ApplicationMgr, IOSvc
 ApplicationMgr().EvtSel = 'NONE'
-ApplicationMgr().EvtMax = 1000
+ApplicationMgr().EvtMax = 10000
 ApplicationMgr().ExtSvc += ["RndmGenSvc", EventDataSvc("EventDataSvc")]
 
-# Beamspot vertex/time smearing (FCC-ee IDEA values). Done here via the
-# Gaudi VertexSmearingTool rather than Pythia8's own Beams:allowVertexSpread,
-# so it isn't applied twice.
+# Writes the EventHeader collection (run/event number) expected by
+# downstream tools.
+from Configurables import EventHeaderCreator
+eventHeaderCreator = EventHeaderCreator("eventHeaderCreator")
+ApplicationMgr().TopAlg += [eventHeaderCreator]
+
+# Beamspot vertex/time smearing (FCC-ee IDEA values), applied consistently
+# to every sample generated with this script, via the Gaudi
+# VertexSmearingTool rather than each Pythia8 card's own
+# Beams:allowVertexSpread (which would either double-apply it, for cards
+# that also set their own, or not apply it at all, for cards that don't).
 from Configurables import GaussSmearVertex
 smeartool = GaussSmearVertex()
 smeartool.xVertexSigma = 5.96e-3 * units.mm
@@ -220,6 +269,9 @@ smeartool.yVertexSigma = 23.8e-6 * units.mm
 smeartool.zVertexSigma = 0.397 * units.mm
 smeartool.tVertexSigma = 10.89 * units.mm
 
+# Default: the mumuH_Hbb signal card. Can be overridden via k4run's CLI
+# property overrides, no file edits needed:
+#   k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=<card>.cmd
 from Configurables import PythiaInterface
 pythia8gentool = PythiaInterface()
 pythia8gentool.pythiacard = "mumuH_Hbb.cmd"
@@ -232,9 +284,8 @@ pythia8gen.hepmc.Path = "hepmc"
 # A small fraction of events (~1 in a few thousand) hit an unrecoverable
 # Pythia8-level failure (e.g. energy-momentum conservation check) that
 # retrying doesn't fix. Without raising this, Gaudi's default ErrorMax = 1
-# means a single such event aborts the whole run - only shows up at scale
-# (not in a 1000-event test). ErrorMax = 20 lets a handful be skipped
-# instead. Deprecated on some Gaudi versions but still functional.
+# means a single such event aborts the whole run. ErrorMax = 20 lets a
+# handful be skipped instead.
 pythia8gen.ErrorMax = 20
 ApplicationMgr().TopAlg += [pythia8gen]
 
@@ -246,24 +297,63 @@ hepmc_converter.GenParticles.Path = e4_labels.MCParticles
 ApplicationMgr().TopAlg += [hepmc_converter]
 
 iosvc = IOSvc()
+# Output location can be overridden via:
+#   k4run pythia_gen.py --IOSvc.Output=<output>.root
 iosvc.Output = "mumuH_Hbb.root"
 ```
 
-Copy both files next to the LHE file produced in Step 1 and run:
+<details open>
+<summary><strong>❓ Question:</strong></summary>
+
+The script sets `pythia8gen.ErrorMax = 20`. What do you think would happen
+at this stage's actual sample size (10,000 events) if this were left at
+Gaudi's default, `ErrorMax = 1`?
+
+<details>
+<summary><strong>✅ Answer:</strong></summary>
+
+A small fraction of events (roughly 1 in a few thousand) hit a Pythia8-level
+failure that retrying doesn't recover from — for example an energy-momentum
+conservation check. With `ErrorMax = 1`, a single such event aborts the *entire*
+run, not just that one event. Raising `ErrorMax` lets Gaudi skip a handful of
+individually-unrecoverable events and keep going instead.
+
+</details>
+</details>
+
+Copy both files next to the LHEf file produced in Step 1 and run:
 
 ```bash
-cp ../../mumuH_Hbb.cmd ../../pythia_mumuH.py .
-k4run pythia_mumuH.py
+cp ../../mumuH_Hbb.cmd ../../pythia_gen.py .
+k4run pythia_gen.py
 ```
 
 This produces `mumuH_Hbb.root`, an EDM4hep file with the showered,
-hadronized, H -> b b decayed event record, in an `MCParticles` collection.
+hadronized, $H \rightarrow b \bar{b}$ decayed event record, in an
+`MCParticles` collection.
 
-`Sim/ee` consumes this file's `MCParticles` collection directly via
+[`Sim/ee`](../../Sim/ee/README.md) consumes this file's `MCParticles` collection directly via
 `k4SimDelphesAlg` from
-[`key4hep/k4SimDelphes`](https://github.com/key4hep/k4SimDelphes) — that
-component takes a generic `edm4hep::MCParticleCollection` as input,
-independent of how it was produced.
+[`key4hep/k4SimDelphes`](https://github.com/key4hep/k4SimDelphes), which takes
+a generic `edm4hep::MCParticleCollection` as input, independent of how it was
+produced.
+
+
+## Side task: background samples
+
+The two largest backgrounds to the mumuH signal, $e^{+}e^{-} \rightarrow WW$ and
+$e^{+}e^{-} \rightarrow ZZ$, can optionally be generated the same way as Step 2
+— reusing `pythia_gen.py` with a different card, no WHIZARD step needed since
+Pythia8 generates these hard processes itself. See
+[`solutions/backgrounds.md`](solutions/backgrounds.md) for the walkthrough; the
+cards themselves are also in [`solutions/`](solutions) folder.
+
+## What's next
+
+The showered, $H \rightarrow b \bar{b}$ decayed sample (`mumuH_Hbb.root`) is the
+input to Delphes parametrized fast simulation with the FCC-ee IDEA card — see
+[`Sim/ee`](../../Sim/ee/README.md).
+
 
 ## References
 
@@ -276,12 +366,8 @@ independent of how it was produced.
   (`FCC-config`, `winter2023` branch).
 - [WHIZARD manual](https://whizard.hepforge.org/manual.pdf) (covers up to
   v3.4.3).
+- [WHIZARD reference paper](https://arxiv.org/abs/0708.4233) (Kilian, Ohl,
+  Reuter — describes cascade decays vs. complete matrix elements, and spin
+  correlations, in Section 6.6).
 - [Pythia8 manual](https://pythia.org/manuals/pythia8315/Welcome.html)
   (v8.315, matching the version in the Key4hep stack used here).
-
-## What's next
-
-The showered, H -> b b decayed sample (`mumuH_Hbb.root`) is the input to
-Delphes fast simulation with the FCC-ee IDEA card — see `Sim/ee`.
-
-See [`TODO.md`](TODO.md) for open items not yet resolved in this stage.
