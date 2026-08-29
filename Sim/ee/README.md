@@ -206,9 +206,19 @@ Since we're looking at $e^+e^- \to ZH \to \mu^+\mu^- b\bar{b}$ events, we expect
 > The pre-efficiency filter selects muon candidates purely by MC truth PDG code, with no efficiency cut applied. The default `Muon` collection then reflects the identification efficiency parametrization we discussed above. Comparing the two collection sizes gives you a direct, visible measurement of that efficiency — since we expect at least two true muons per event here, you should be able to see the ~99%-efficiency-above-threshold logic show up as occasional events where `MuonRaw` has more entries than `Muon`. 
 > </details>
 
-<!-- ADVANCED TASK OPTION ### Task 3 : Changing the PID settings 
-CHANGE THE TIMING RESOLUTION, REPRODUCE THE FILE, AND USE BOTH IN THE ANA STEP TO PLOT MTOF  -->
+### Optional advanced tasks: Change the detector design
+
+In this section we want to discuss a few ideas for more advanced tasks that would take a bit more time if you are completely new to running detector simulations and working with `EDM4hep` files. Given the short time of the tutorial session today, please consider them fully optional and only as an inspiration for what you could try, if you have the time and interest in this level of detail.
+
+The common thread across all of these is: pick one detector design parameter, change it in the Delphes card, rerun the simulation, and see how the resulting distributions change. This is genuinely how detector design studies work in practice — you isolate one choice at a time and quantify its impact, rather than changing everything at once. 
+
+You don't need to attempt all of the ideas below — pick whichever one sounds most interesting to you, or the one closest to your own physics interests.
+
+Since time is very short, for each task section we provide helper script, `plotting_advanced_tasks_<system>.py`, to produce the comparison plots of the relevant quantities. Feel free to use those out of the box to get quick answers, or just as an inspiration and guide to write your own `EDM4hep` file reader. 
 
 
-
+- **Tracking system:**
+  - **Remove the innermost vertex layer.** In the `TrackSmearing` module's `DetectorGeometry` block, delete the first `VTXLOW` line (the one at the smallest radius). What would you expect to happen to the impact parameter resolution? Rerun the simulation and compare the track impact parameter `D0` between the two files to check your prediction. Does this have any implications for flavour tagging?
+  - **Raise the minimum hit requirement.** Change `NMinHits` in the `TrackSmearing` module from its default of 6 to something much higher, e.g. 25. Which tracks would you expect to be affected most, and why? Rerun the simulation and compare the reconstructed track `eta` distribution between the two files to check your prediction.
+  - **Lower the magnetic field.** Change `B` at the top of the card from 2.0 T to, e.g., 0.5 T. What would you expect to happen to the track $p_T$ resolution, and why? Rerun the simulation and compare $\sigma_{p_T}/p_T$ (computed from the track's own covariance matrix) between the two files to check your prediction.
 
