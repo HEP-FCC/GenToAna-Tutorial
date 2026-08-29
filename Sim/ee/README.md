@@ -201,7 +201,7 @@ Since we're looking at $e^+e^- \to ZH \to \mu^+\mu^- b\bar{b}$ events, we expect
 > <details><summary><strong>✅ Solution</strong></summary>
 > <br>
 >
-> `k4run solutions/delphes_IDEA_mumuH_allMuons.py -n 100`
+> `k4run solutions/delphes_IDEA_mumuH_allMuons.py -n 10`
 >
 > The pre-efficiency filter selects muon candidates purely by MC truth PDG code, with no efficiency cut applied. The default `Muon` collection then reflects the identification efficiency parametrization we discussed above. Comparing the two collection sizes gives you a direct, visible measurement of that efficiency — since we expect at least two true muons per event here, you should be able to see the ~99%-efficiency-above-threshold logic show up as occasional events where `MuonRaw` has more entries than `Muon`. 
 > </details>

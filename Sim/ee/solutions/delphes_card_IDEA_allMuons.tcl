@@ -994,7 +994,7 @@ module TreeWriter TreeWriter {
     add Branch MuonEfficiency/muons Muon Muon
     add Branch PhotonEfficiency/photons Photon Photon
 
-    add Branch MuonFilter/muons MuonAll Muon
+    add Branch MuonFilter/muons MuonRaw Muon
 
     add Branch JetEnergyScale/jets Jet Jet
     add Branch MissingET/momentum MissingET MissingET

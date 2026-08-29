@@ -8,10 +8,10 @@ from k4FWCore import ApplicationMgr
 # still-functional path. Switch to IOSvc (see delphes_mumuH_iosvc.py) once
 # the pinned release moves past k4simdelphes v00-08.
 podioevent = k4DataSvc("EventDataSvc")
-podioevent.input = "/eos/user/b/bistapf/tutorial_files/mumuH_Hbb_10k.edm4hep.root"
+podioevent.input = "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/gen/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root"
 
 inp = PodioInput("InputReader")
-inp.collections = ["MCParticles"]
+inp.collections = ["MCParticles", "EventHeader"]
 
 from Configurables import k4SimDelphesAlg
 delphesalg = k4SimDelphesAlg()
