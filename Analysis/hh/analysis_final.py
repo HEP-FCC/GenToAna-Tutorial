@@ -1,7 +1,7 @@
 #Input directory where the files produced at the pre-selection level are
 inputDir  = "path"
 
-#Input directory where the files produced at the pre-selection level are
+# Output path
 outputDir  = "path"
 
 processList = {
@@ -36,7 +36,7 @@ do_weighted = True
 # Dictionary of the list of cuts. The key is the name of the selection that will be added to the output file
 # Add the cuts definining the signal region here, i.e. select appropriate windows in the di-photon and di-jet mass
 cutList = {
-            "CUT":"CUTSTRING",
+            "sel0_example":"1 == 1",
             }
 
 # Dictionary for the output variable/histograms. The key is the name of the variable in the output files. "name" is the name of the variable in the input file, "title" is the x-axis label of the histogram, "bin" the number of bins of the histogram, "xmin" the minimum x-axis value and "xmax" the maximum x-axis value.
