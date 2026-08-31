@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this tutorial material, please cite it as below."
+title: "GenToAna Tutorial"
+abstract: >-
+  FCC tutorial covering the full chain from event Generation through
+  Fast/Parametric Simulation (Delphes) to physics Analysis.
+type: software
+license: CC-BY-SA-4.0
+repository-code: "https://github.com/HEP-FCC/GenToAna-Tutorial"
+authors:
+  - given-names: Juraj
+    family-names: Smiesko
+    affiliation: CERN
+    orcid: "https://orcid.org/0000-0003-3725-2984"
+  - given-names: Birgit
+    family-names: Stapf
+    affiliation: CERN
+  - given-names: Benedikt
+    family-names: Wach
+    affiliation: CERN
