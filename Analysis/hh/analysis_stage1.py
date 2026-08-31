@@ -71,7 +71,8 @@ class Analysis():
             dframe
 
             ########################################### DEFINITION OF VARIABLES ########################################### 
-
+            # Define the generator event weight from the EventHeader
+            # Hint: EventHeader is a collection with exactly one entry per event
 
             ########################################### PHOTONS ########################################### 
 
