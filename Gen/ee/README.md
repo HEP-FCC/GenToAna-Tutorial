@@ -1,9 +1,10 @@
 # FCC-ee: Event generation
 
-In this tutorial section we will illustrate how to generate events using
-Key4hep software stack and FCC infrastructure build around it. MC generator
-WHIZARD generates the hard process $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$,
-then Pythia8 showers, hadronizes, and decays $H \rightarrow b \bar{b}$.
+In this tutorial section, we illustrate how to generate events using the
+Key4hep software stack and the FCC infrastructure built around it. MC
+generator WHIZARD generates the hard process
+$e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$, then Pythia8 showers,
+hadronizes, and decays $H \rightarrow b \bar{b}$.
 
 
 ## Environment setup
@@ -15,15 +16,12 @@ developed jointly across several future-collider projects (FCC, EIC, CEPC, ILC)
 so they don't each maintain their own separate framework:
 
 ```bash
-source /cvmfs/sw.hsf.org/key4hep/setup.sh -r 2026-04-08
-```
-
-This tutorial is pinned to the `2026-04-08` release, to see all available
-stacks use plain `-r` parameter. This tutorial should also work in the latest
-Key4hep stack which you can get by running:
-```bash
 source /cvmfs/sw.hsf.org/key4hep/setup.sh
 ```
+
+This tutorial was tested in the `2026-04-08` release; to see all available
+releases, use the plain `-r` parameter. This tutorial should also work with the
+latest Key4hep stack.
 
 > Notes:
 > 1. Key4hep only supports Bash shell at the moment.
@@ -63,7 +61,7 @@ whizard --version
 WHIZARD has no complete, supported interface to Pythia8 — only to the
 legacy PYTHIA6 (see the
 [WHIZARD manual](https://whizard.hepforge.org/manual.pdf)). So this step
-only generates the hard process and writes it out as LHEf file format;
+only generates the hard process and writes it out in LHEf format;
 showering, hadronization, and the $H \rightarrow b \bar{b}$ decay all happen
 as an explicit separate step in Pythia8 (Step 2 below), rather than inside
 WHIZARD itself.
@@ -166,7 +164,7 @@ effect on the exact lineshape.
 
 ## Step 2: Pythia8 - shower, hadronize, decay $H \rightarrow b \bar{b}$
 
-Key4hep tooling doesn't provide Pythia8 as a bare standalone binary, instead
+Key4hep tooling doesn't provide Pythia8 as a bare standalone binary. Instead,
 it wraps it into a [Gaudi](https://gitlab.cern.ch/gaudi/Gaudi) algorithm. Gaudi
 is a component-based software framework (originally from LHCb/ATLAS, now widely
 reused across HEP) that Key4hep is built on. Gaudi programs are assembled from
@@ -191,8 +189,8 @@ script"; `k4run` is Key4hep's command-line tool for running these scripts.
 >    `GenAlg`).
 
 `PythiaInterface` reads a `.cmd` card, which can point at an external LHEf
-file. The card to decay the Higgs into $b\bar{b}$ pair, hadronizes and does the
-showering looks like this [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
+file. The card that decays the Higgs into a $b\bar{b}$ pair, hadronizes, and
+showers the event looks like this, [`mumuH_Hbb.cmd`](mumuH_Hbb.cmd):
 
 ```
 ! Reads the WHIZARD LHEf output from Step 1 and forces H -> b b. Vertex/time
@@ -226,7 +224,7 @@ treated the same way?
 <details>
 <summary><strong>✅ Answer:</strong></summary>
 
-Since we turn on WHIZARD's `isr_handler` in Step 1. It already applied the
+WHIZARD's `isr_handler`, turned on in Step 1, already applied the
 initial-state radiation, as an energy redistribution on the beam momenta, so
 Pythia8's own initial-state shower would double-count it if left on. FSR is
 different: the LHE file from Step 1 has the Higgs *undecayed*, and Pythia8's
@@ -237,7 +235,7 @@ straight into string fragmentation with zero shower.
 </details>
 </details>
 
-Steering script [`pythia_gen.py`](pythia_gen.py) reads the card above. No
+The steering script [`pythia_gen.py`](pythia_gen.py) reads the card above. No
 HepMC file is ever written to disk here: `GenAlg` writes the
 Pythia8-generated event into Gaudi's in-memory transient event store and
 `HepMCToEDMConverter` immediately reads it from there and converts it, within
@@ -373,7 +371,7 @@ $e^{+}e^{-} \rightarrow ZZ$, can optionally be generated the same way as Step 2
 — reusing `pythia_gen.py` with a different card, no WHIZARD step needed since
 Pythia8 generates these hard processes itself. See
 [`solutions/backgrounds.md`](solutions/backgrounds.md) for the walkthrough; the
-cards themselves are also in [`solutions/`](solutions) folder.
+cards themselves are also in the [`solutions/`](solutions) folder.
 
 
 ## What's next
