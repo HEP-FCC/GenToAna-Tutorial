@@ -1,4 +1,4 @@
-# Gen - FCC-ee: Side task - generating the two largest backgrounds
+# FCC-ee: Side task - generating the two largest backgrounds
 
 The two largest Standard Model backgrounds to the mumuH signal are
 e+e- -> WW and e+e- -> ZZ (diboson) production. Unlike the signal, these
