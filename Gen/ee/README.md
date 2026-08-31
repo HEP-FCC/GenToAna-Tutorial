@@ -179,16 +179,16 @@ script"; `k4run` is Key4hep's command-line tool for running these scripts.
 >    ```bash
 >    k4run steering_script.py --help
 >    ```
-> 2. Gaudi components of the Key4hep ecosystem are spread through many
->    packages, here we primarily use the Gaudi components from
->    [`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
->    `GenAlg`).
-> 3. To check that a steering script is valid without actually running the
+> 2. To check that a steering script is valid without actually running the
 >    job (parses the config, wires up components, but generates no events),
 >    use:
 >    ```bash
 >    k4run steering_script.py --dry-run
 >    ```
+> 3. Gaudi components of the Key4hep ecosystem are spread through many
+>    packages, here we primarily use the Gaudi components from
+>    [`key4hep/k4Gen`](https://github.com/key4hep/k4Gen) (`PythiaInterface` +
+>    `GenAlg`).
 
 `PythiaInterface` reads a `.cmd` card, which can point at an external LHEf
 file. The card to decay the Higgs into $b\bar{b}$ pair, hadronizes and does the
@@ -375,15 +375,16 @@ Pythia8 generates these hard processes itself. See
 [`solutions/backgrounds.md`](solutions/backgrounds.md) for the walkthrough; the
 cards themselves are also in [`solutions/`](solutions) folder.
 
-## What's next
 
-The showered, $H \rightarrow b \bar{b}$ decayed sample (`mumuH_Hbb.root`) is the
-input to Delphes parametrized fast simulation with the FCC-ee IDEA card — see
-[`Sim/ee`](../../Sim/ee/README.md).
+## What's next
 
 To graphically explore the relationships between the `MCParticles` in this
 output (parent/child links, decay trees), see the
 [eedE (EDM4hep Event Data Explorer) tutorial](https://hep-fcc.github.io/fcc-tutorials/main/2-gen-and-fastsim/2-4-eedE/README.html).
+
+The showered, $H \rightarrow b \bar{b}$ decayed sample (`mumuH_Hbb.root`) is the
+input to Delphes parametrized fast simulation with the FCC-ee IDEA card — see
+[`Sim/ee`](../../Sim/ee/README.md).
 
 
 ## References
