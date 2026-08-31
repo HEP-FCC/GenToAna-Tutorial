@@ -5,7 +5,7 @@ This chapter accompanies [`02_selection_and_hist.py`](02_selection_and_hist.py).
 In this stage you will:
 
 - choose cuts that retain the $ZH$ signal while rejecting $ZZ$ and $WW$ backgrounds;
-- normalise the samples to the expected FCC-ee luminosity (10.6 ab${^-1}$);
+- normalise the samples to the expected FCC-ee luminosity (10.6 ab $^{-1}$);
 - produce histograms and a cut flow after each selection step.
 
 ## Choose the selection cuts
@@ -75,7 +75,7 @@ The selected Monte Carlo samples contain different numbers of generated events a
 $$
 N_{\mathrm{expected}}
 = \frac{N_{\mathrm{selected}}}{N_{\mathrm{generated}}}
-  \;\sigma_{\mathrm{eff}}\;k\;\epsilon_{\mathrm{match}}\;\mathcal{L}.
+  \times \sigma_{\mathrm{eff}} \times k \times \epsilon_{\mathrm{match}} \times \mathcal{L}.
 $$
 
 Here, $\sigma_{\mathrm{eff}}$ is the effective cross section of the generated final state, $k$ is an optional higher-order correction, $\epsilon_{\mathrm{match}}$ is an optional generator-matching efficiency, and $\mathcal{L}$ is the integrated luminosity. For these samples, the latter two correction factors are 1.
@@ -117,11 +117,11 @@ procDictAdd = {
 
 ```python
 cutList = {
-    "sel0_baseline": "true",
-    "sel1_zmass": "Z-mass requirement",
-    "sel2_zmomentum": "Z-mass && Z-momentum requirement",
-    "sel3_recoil": "previous && recoil-mass requirement",
-    "sel4_btag": "previous && b-tag requirement"
+    "sel0_baseline": "previous baseline selection",
+    "sel1_zmass": "above + Z-mass requirement",
+    "sel2_zmomentum": "above + Z-momentum requirement",
+    "sel3_recoil": "above + recoil-mass requirement",
+    "sel4_btag": "above + b-tag requirement"
 }
 ```
 

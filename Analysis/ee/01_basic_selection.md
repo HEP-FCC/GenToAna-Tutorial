@@ -109,9 +109,9 @@ For example, the input files for the process `wzp8_ee_mumuH_Hbb_ecm240` will be 
 > Create the `inputs` directory and the nested sample directories expected by FCCAnalyses. Download each ROOT file into its corresponding sample directory.
 > Required samples:
 >
-> - [p8_ee_WW_mumu_ecm240_edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/p8_ee_WW_mumu_ecm240/p8_ee_WW_mumu_ecm240.edm4hep.root)
-> - [p8_ee_ZZ_mumubb_ecm240_edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/p8_ee_ZZ_mumubb_ecm240/p8_ee_ZZ_mumubb_ecm240.edm4hep.root)
-> - [wzp8_ee_mumuH_Hbb_ecm240_edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root)
+> - [p8_ee_WW_mumu_ecm240.edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/p8_ee_WW_mumu_ecm240/p8_ee_WW_mumu_ecm240.edm4hep.root)
+> - [p8_ee_ZZ_mumubb_ecm240.edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/p8_ee_ZZ_mumubb_ecm240/p8_ee_ZZ_mumubb_ecm240.edm4hep.root)
+> - [wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root](https://fccsw.web.cern.ch/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root)
 >
 > The name of each sample directory must exactly match its key in `self.process_list`. A correctly prepared input area will have this structure:
 > ```text
@@ -125,9 +125,8 @@ For example, the input files for the process `wzp8_ee_mumuH_Hbb_ecm240` will be 
 > ```
 > Use shell commands such as `mkdir`, `cd`, and `wget` to construct this structure yourself.
 
-<br>
-
 If you managed to produce your own signal sample in the previous tutorial, feel free to modify the `process_list` accordingly to point to it.
+<br/><br/>
 
 ```python
 self.include_paths = ["functions.h"]
@@ -200,8 +199,7 @@ reconstructed-particle collection:
 ```python
 df = df.Define(
     "muons_all",
-    "FCCAnalyses::ReconstructedParticle::get(Muon0, ReconstructedParticles)",
-)
+    "FCCAnalyses::ReconstructedParticle::get(Muon0, ReconstructedParticles)",)
 ```
 
 
@@ -212,8 +210,7 @@ df = df.Define(
 ```python
 df = df.Define(
     "muons",
-    "FCCAnalyses::ReconstructedParticle::FILLME(FILLME)(FILLME)",
-)
+    "FCCAnalyses::ReconstructedParticle::FILLME(FILLME)(FILLME)",)
 ```
 
 We also define columns containing the charges and number of the selected muons:
@@ -248,9 +245,7 @@ opposite-sign pair:
 
 ```python
 df = df.Filter("muons_sel_iso.size() > 0")
-df = df.Filter(
-    "no_muons >= 2 && abs(Sum(q_muons)) < q_muons.size()"
-)
+df = df.Filter("no_muons >= 2 && abs(Sum(q_muons)) < q_muons.size()")
 ```
 ### Remove the muons before clustering jets
 
@@ -269,9 +264,7 @@ The configured helpers now add their columns to the dataframe:
 ```python
 df = self.jet_clustering_helper.define(df)
 df = self.jet_flavour_helper.define(df)
-df = self.jet_flavour_helper.inference(
-    self.weaver_preproc, self.weaver_model, df
-)
+df = self.jet_flavour_helper.inference(self.weaver_preproc, self.weaver_model, df)
 ```
 
 The clustering helper produces the two jet objects, their assigned
@@ -386,12 +379,10 @@ Finally, the two jet objects are converted into four-vectors and combined:
 df = df.Define(
     "p4_jets",
     "JetConstituentsUtils::compute_tlv_jets("
-    f"{self.jet_clustering_helper.jets})",
-)
+    f"{self.jet_clustering_helper.jets})",)
 df = df.Define(
     "m_jj",
-    "JetConstituentsUtils::InvariantMass(p4_jets[0], p4_jets[1])",
-)
+    "JetConstituentsUtils::InvariantMass(p4_jets[0], p4_jets[1])",)
 ```
 
 For signal, `m_jj` should peak near the Higgs mass. It complements the recoil
