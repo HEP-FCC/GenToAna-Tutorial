@@ -44,12 +44,6 @@ solutions are also provided here for offline use.
 
 Specific schools/dates are tracked as branches or tags off `main`.
 
-## Status
-
-Scaffolding stage — material to be filled in per stage. See internal planning
-notes for owners and open questions (samples to regenerate, possible `combine`
-fit as an optional extension, tagger material, Z-Builder update).
-
 ## License
 
 Copyright (c) 2026 CERN. The documentation and material in this repository
