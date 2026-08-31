@@ -61,9 +61,9 @@ ROOT::VecOps::RVec<float> get_track_pt_ress(const ROOT::VecOps::RVec<TrackState>
 # are never plotted against each other.
 variants = {
     "baseline": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root",
-    "removedInnerVTXLayer": "/eos/experiment/fcc/hh/tutorials/temp/mumuH_delphes_IDEA_removedInnerVTXLayer.edm4hep.root",
-    "nMinHits25": "/eos/experiment/fcc/hh/tutorials/temp/mumuH_delphes_IDEA_nTrackHits25.edm4hep.root",
-    "BField05": "/eos/experiment/fcc/hh/tutorials/temp/mumuH_delphes_IDEA_B05.edm4hep.root",
+    "removedInnerVTXLayer": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/mumuH_delphes_IDEA_removedInnerVTXLayer.edm4hep.root",
+    "nMinHits25": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/mumuH_delphes_IDEA_nTrackHits25.edm4hep.root",
+    "BField05": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/mumuH_delphes_IDEA_B05.edm4hep.root",
 }
 
 out_dir = "./plots"

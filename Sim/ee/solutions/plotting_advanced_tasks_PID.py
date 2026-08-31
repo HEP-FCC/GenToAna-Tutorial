@@ -64,7 +64,7 @@ ROOT::VecOps::RVec<float> get_track_mtofs(const ROOT::VecOps::RVec<TrackState>& 
 # "baseline" is the reference every other variant is compared against.
 variants = {
     "baseline": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/wzp8_ee_mumuH_Hbb_ecm240.edm4hep.root",
-    "PID_changes": "/eos/experiment/fcc/hh/tutorials/temp/mumuH_delphes_IDEA_Gas3_TimeSmear100ps.edm4hep.root",
+    "PID_changes": "/eos/project/f/fccsw-web/www/tutorials/gen-to-ana/bnl-cern-2026/delphes/wzp8_ee_mumuH_Hbb_ecm240/mumuH_delphes_IDEA_Gas3_TimeSmear100ps.edm4hep.root",
 }
 out_dir = "./plots"
 color_baseline = ROOT.kBlue+2
