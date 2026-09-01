@@ -6,10 +6,10 @@
   "creators": [
     {"name": "Smiesko, Juraj", "affiliation": "CERN", "orcid": "0000-0003-3725-2984"},
     {"name": "Stapf, Birgit", "affiliation": "CERN"},
-    {"name": "Wach, Benedikt", "affiliation": "CERN", "orcid": "0000-0003-3533-7669"}
+    {"name": "Wach, Benedikt", "affiliation": "CERN", "orcid": "0000-0003-3533-7669"},
+    {"name": "Li, Ang"}
   ],
   "contributors": [
-    {"name": "Li, Ang", "type": "Other"},
     {"name": "Eysermans, Jan", "type": "Other"},
     {"name": "Hernandez Villanueva, Michel", "type": "Other"}
   ]
