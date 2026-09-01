@@ -7,8 +7,8 @@ Run after ``02_selection_and_hist.py`` with:
 import ROOT
 
 
-intLumi = 10.6e6  # pb^-1 = 10.6 ab^-1
-intLumiLabel = "L = 10.6 ab^{-1}"
+intLumi = 10.8e6  # pb^-1 = 10.8 ab^-1
+intLumiLabel = "L = 10.8 ab^{-1}"
 ana_tex = "e^{+}e^{-} #rightarrow ZH #rightarrow #mu^{+}#mu^{-}b#bar{b}"
 energy = 240.0
 collider = "FCC-ee"

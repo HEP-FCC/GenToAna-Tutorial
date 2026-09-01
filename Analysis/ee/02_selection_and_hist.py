@@ -50,7 +50,7 @@ procDictAdd = {
     },
 }
 
-intLumi = 10.6e6  # pb^-1 = 10.6 ab^-1
+intLumi = 10.8e6  # pb^-1 = 10.8 ab^-1
 doScale = True
 saveJSON = True
 

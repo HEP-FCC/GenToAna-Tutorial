@@ -1,10 +1,49 @@
-# Output files
+# Analysis outputs (fccanalysis stages, histograms, plots)
 *.root
+*.pdf
+outputs/
+
+# Event generator outputs
+*.lhe
+*.lhe.gz
+*.hepmc
+*.hepmc.gz
+*.stdhep
+*.evx
+
+# WHIZARD run artifacts (generated matrix-element code, phase space, grids)
+*.f90
+*.phs
+*.vg
+*.vg2
+*.mci
+whizard.log
+*.log
+
+# Compiled code / libtool artifacts
+*.o
+*.lo
+*.la
+*.lai
+*.mod
+*.smod
+*.so
+*.dylib
+.libs/
+makefile
+*.makefile
+
+# Downloaded ML model files (flavour tagging)
+*.onnx
+fccee_flavtagging_*.json
 
 # Python cache
 __pycache__/
-*.pyc
+*.py[cod]
 
 # Editor/OS cruft
 .vscode/
+.idea/
+*.swp
+*~
 .DS_Store
