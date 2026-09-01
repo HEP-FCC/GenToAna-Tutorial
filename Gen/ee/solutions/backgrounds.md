@@ -20,7 +20,7 @@ IDEA values used for the signal instead — so smearing is consistent across
 signal and backgrounds, rather than each card using its own values.
 
 ```bash
-mkdir -p test_whizard/WW && cd test_whizard/WW
+mkdir -p pythia_prod/WW && cd pythia_prod/WW
 cp ../../solutions/p8_ee_WW_ecm240.cmd ../../pythia_gen.py .
 k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=p8_ee_WW_ecm240.cmd --IOSvc.Output=WW.root
 ```
@@ -36,7 +36,7 @@ electroweak diboson process — dominated by ZZ away from resonance, but
 also including some gamma*/Z interference, hence the setting name):
 
 ```bash
-mkdir -p test_whizard/ZZ && cd test_whizard/ZZ
+mkdir -p pythia_prod/ZZ && cd pythia_prod/ZZ
 cp ../../solutions/p8_ee_ZZ_ecm240.cmd ../../pythia_gen.py .
 k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=p8_ee_ZZ_ecm240.cmd --IOSvc.Output=ZZ.root
 ```

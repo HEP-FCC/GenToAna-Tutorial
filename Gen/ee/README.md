@@ -6,6 +6,13 @@ generator WHIZARD generates the hard process
 $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$, then Pythia8 showers,
 hadronizes, and decays $H \rightarrow b \bar{b}$.
 
+All commands below assume you start from the `Gen/ee` folder in the cloned
+repository:
+
+```bash
+cd GenToAna-Tutorial/Gen/ee
+```
+
 
 ## Environment setup
 
@@ -108,21 +115,27 @@ Run it in its own directory, as WHIZARD produces a lot of additional helper
 files:
 
 ```bash
-mkdir -p test_whizard/mumuH && cd test_whizard/mumuH
+mkdir -p whizard_prod/mumuH && cd whizard_prod/mumuH
 cp ../../mumuH.sin .
-whizard mumuH.sin
+OMP_NUM_THREADS=1 whizard mumuH.sin
 ```
 
 This produces `mumuH.lhe`.
 
-> **Note:** WHIZARD also computes and prints the process cross-section
-> during the `integrate` step above — look for the `Integral[fb]`/
-> `Error[fb]` columns in the last combined row of the iteration table
-> (also echoed in the generated `mumuH.log` file). This is the
-> cross-section for the exact final state computed here
-> ($e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$), not the total $ZH$
-> production cross-section — it already includes the
-> $Z \rightarrow \mu^{+} \mu^{-}$ branching fraction (~3.37%).
+> Notes:
+> 1. WHIZARD uses OpenMP and by default grabs all available cores on the
+>    machine, which isn't friendly (or efficient) on shared/multi-user
+>    nodes. `OMP_NUM_THREADS=1` restricts it to a single thread; drop it
+>    if you're on a machine you have exclusively to yourself and want the
+>    integration step to finish faster.
+> 2. WHIZARD also computes and prints the process cross-section during
+>    the `integrate` step above — look for the `Integral[fb]`/`Error[fb]`
+>    columns in the last combined row of the iteration table (also echoed
+>    in the generated `mumuH.log` file). This is the cross-section for
+>    the exact final state computed here
+>    ($e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$), not the total $ZH$
+>    production cross-section — it already includes the
+>    $Z \rightarrow \mu^{+} \mu^{-}$ branching fraction (~3.37%).
 
 Two settings are deliberately left out rather than pinned explicitly,
 relying on their WHIZARD defaults:
@@ -135,31 +148,31 @@ relying on their WHIZARD defaults:
 >    file into Pythia8 downstream, see
 >    [WHIZARD manual](https://whizard.hepforge.org/manual.pdf).
 
-<details open>
-<summary><strong>❓ Question:</strong></summary>
-
-WHIZARD generates $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$ directly. Why
-not $e^{+}e^{-} \rightarrow Z H$ with $Z \rightarrow \mu^{+} \mu^{-}$
-instead — isn't the final state identical?
-
-<details>
-<summary><strong>✅ Answer:</strong></summary>
-
-WHIZARD computes the complete matrix element for the exact final state
-directly, rather than treating it as production ($e^{+}e^{-} \rightarrow Z
-H$) followed by a separate, on-shell $Z \rightarrow \mu^{+} \mu^{-}$
-decay. WHIZARD does support that factorized "cascade decay" mode too, and
-it can retain full spin correlations between production and decay, but it
-still restricts the intermediate boson to being on-shell, discarding the
-true Breit-Wigner off-shell tails and any other diagrams contributing to
-the same final state that don't proceed through that resonance ([WHIZARD
-reference paper](https://arxiv.org/abs/0708.4233), Section 6.6). At
-$\sqrt{s} = 240$ GeV there's only about 24 GeV of phase space left over the
-$H + Z$ mass threshold, so the $Z$'s few-GeV width has a non-negligible
-effect on the exact lineshape.
-
-</details>
-</details>
+> <details open>
+> <summary><strong>❓ Question:</strong></summary>
+>
+> WHIZARD generates $e^{+}e^{-} \rightarrow \mu^{+} \mu^{-} H$ directly. Why
+> not $e^{+}e^{-} \rightarrow Z H$ with $Z \rightarrow \mu^{+} \mu^{-}$
+> instead — isn't the final state identical?
+>
+> <details>
+> <summary><strong>✅ Answer:</strong></summary>
+>
+> WHIZARD computes the complete matrix element for the exact final state
+> directly, rather than treating it as production ($e^{+}e^{-} \rightarrow Z
+> H$) followed by a separate, on-shell $Z \rightarrow \mu^{+} \mu^{-}$
+> decay. WHIZARD does support that factorized "cascade decay" mode too, and
+> it can retain full spin correlations between production and decay, but it
+> still restricts the intermediate boson to being on-shell, discarding the
+> true Breit-Wigner off-shell tails and any other diagrams contributing to
+> the same final state that don't proceed through that resonance ([WHIZARD
+> reference paper](https://arxiv.org/abs/0708.4233), Section 6.6). At
+> $\sqrt{s} = 240$ GeV there's only about 24 GeV of phase space left over the
+> $H + Z$ mass threshold, so the $Z$'s few-GeV width has a non-negligible
+> effect on the exact lineshape.
+>
+> </details>
+> </details>
 
 
 ## Step 2: Pythia8 - shower, hadronize, decay $H \rightarrow b \bar{b}$
@@ -214,26 +227,26 @@ LesHouches:matchInOut = off
 25:onIfAny = 5
 ```
 
-<details open>
-<summary><strong>❓ Question:</strong></summary>
-
-The card sets `PartonLevel:ISR = off` but leaves `PartonLevel:FSR` on
-(Pythia8's default). Shouldn't initial- and final-state radiation be
-treated the same way?
-
-<details>
-<summary><strong>✅ Answer:</strong></summary>
-
-WHIZARD's `isr_handler`, turned on in Step 1, already applied the
-initial-state radiation, as an energy redistribution on the beam momenta, so
-Pythia8's own initial-state shower would double-count it if left on. FSR is
-different: the LHE file from Step 1 has the Higgs *undecayed*, and Pythia8's
-final-state shower is what both decays $H \rightarrow b \bar{b}$ and showers the
-resulting $b/\bar{b}$ before hadronization. Turn it off and the $b/\bar{b}$ go
-straight into string fragmentation with zero shower.
-
-</details>
-</details>
+> <details open>
+> <summary><strong>❓ Question:</strong></summary>
+>
+> The card sets `PartonLevel:ISR = off` but leaves `PartonLevel:FSR` on
+> (Pythia8's default). Shouldn't initial- and final-state radiation be
+> treated the same way?
+>
+> <details>
+> <summary><strong>✅ Answer:</strong></summary>
+>
+> WHIZARD's `isr_handler`, turned on in Step 1, already applied the
+> initial-state radiation, as an energy redistribution on the beam momenta, so
+> Pythia8's own initial-state shower would double-count it if left on. FSR is
+> different: the LHE file from Step 1 has the Higgs *undecayed*, and Pythia8's
+> final-state shower is what both decays $H \rightarrow b \bar{b}$ and showers the
+> resulting $b/\bar{b}$ before hadronization. Turn it off and the $b/\bar{b}$ go
+> straight into string fragmentation with zero shower.
+>
+> </details>
+> </details>
 
 The steering script [`pythia_gen.py`](pythia_gen.py) reads the card above. No
 HepMC file is ever written to disk here: `GenAlg` writes the
@@ -322,33 +335,36 @@ iosvc = IOSvc()
 iosvc.Output = "mumuH_Hbb.root"
 ```
 
-<details open>
-<summary><strong>❓ Question:</strong></summary>
-
-The script sets `pythia8gen.ErrorMax = 20`. What do you think would happen
-at this stage's actual sample size (10,000 events) if this were left at
-Gaudi's default, `ErrorMax = 1`?
-
-<details>
-<summary><strong>✅ Answer:</strong></summary>
-
-A small fraction of events (roughly 1 in a few thousand) hit a Pythia8-level
-failure that retrying doesn't recover from — for example an energy-momentum
-conservation check. With `ErrorMax = 1`, a single such event aborts the *entire*
-run, not just that one event. Raising `ErrorMax` lets Gaudi skip a handful of
-individually-unrecoverable events and keep going instead.
-
-</details>
-</details>
+> <details open>
+> <summary><strong>❓ Question:</strong></summary>
+>
+> The script sets `pythia8gen.ErrorMax = 20`. What do you think would happen
+> at this stage's actual sample size (10,000 events) if this were left at
+> Gaudi's default, `ErrorMax = 1`?
+>
+> <details>
+> <summary><strong>✅ Answer:</strong></summary>
+>
+> A small fraction of events (roughly 1 in a few thousand) hit a Pythia8-level
+> failure that retrying doesn't recover from — for example an energy-momentum
+> conservation check. With `ErrorMax = 1`, a single such event aborts the *entire*
+> run, not just that one event. Raising `ErrorMax` lets Gaudi skip a handful of
+> individually-unrecoverable events and keep going instead.
+>
+> </details>
+> </details>
 
 > **Note:** Gaudi itself flags `ErrorMax` as `[[deprecated]]` (a warning
 > appears at run time), but as of this Key4hep release there's no
 > replacement — the property is still fully functional under the hood, so
 > this tutorial keeps using it as-is until a better alternative exists.
 
-Copy both files next to the LHEf file produced in Step 1 and run:
+Set up a separate directory for this step, copy in the LHEf file produced
+in Step 1 alongside the card and steering script, and run:
 
 ```bash
+cd ../.. && mkdir -p pythia_prod/mumuH && cd pythia_prod/mumuH
+cp ../../whizard_prod/mumuH/mumuH.lhe .
 cp ../../mumuH_Hbb.cmd ../../pythia_gen.py .
 k4run pythia_gen.py
 ```
