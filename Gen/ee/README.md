@@ -10,7 +10,7 @@ All commands below assume you start from the `Gen/ee` folder in the cloned
 repository:
 
 ```bash
-cd GenToAna-Tutorial/Gen/ee
+cd Gen/ee
 ```
 
 
