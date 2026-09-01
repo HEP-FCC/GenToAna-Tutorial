@@ -5,6 +5,13 @@ e+e- -> WW and e+e- -> ZZ (diboson) production. Unlike the signal, these
 don't need WHIZARD: Pythia8 can generate the hard process itself directly,
 so this is a single Pythia8 step with no LHE file involved at all.
 
+> **Note:** "Background" here means a different *physics process* (WW,
+> ZZ) that can mimic the mumuH signal in the final state — not the
+> beam-induced background familiar from FullSim studies, where machine-
+> related backgrounds are overlaid onto a signal event at the
+> simulation/reconstruction level. This tutorial's fast simulation chain
+> doesn't include beam-induced background overlay at all.
+
 Both reuse the signal's [`pythia_gen.py`](../pythia_gen.py) steering script
 as-is — only the card and output filename change, and both are overridable
 at the command line via `k4run`'s property overrides, so no file edits or

@@ -188,13 +188,13 @@ script"; `k4run` is Key4hep's command-line tool for running these scripts.
 > 1. To get a list of all available commandline arguments which one can use to
 >    adjust the steering script use:
 >    ```bash
->    k4run steering_script.py --help
+>    k4run <steering_script.py> --help
 >    ```
 > 2. To check that a steering script is valid without actually running the
 >    job (parses the config, wires up components, but generates no events),
 >    use:
 >    ```bash
->    k4run steering_script.py --dry-run
+>    k4run <steering_script.py> --dry-run
 >    ```
 > 3. Gaudi components of the Key4hep ecosystem are spread through many
 >    packages, here we primarily use the Gaudi components from
@@ -388,6 +388,13 @@ $e^{+}e^{-} \rightarrow ZZ$, can optionally be generated the same way as Step 2
 Pythia8 generates these hard processes itself. See
 [`solutions/backgrounds.md`](solutions/backgrounds.md) for the walkthrough; the
 cards themselves are also in the [`solutions/`](solutions) folder.
+
+> **Note:** "Background" here means a different *physics process* (WW,
+> ZZ) that can mimic the mumuH signal in the final state — not the
+> beam-induced background familiar from FullSim studies, where machine-
+> related backgrounds are overlaid onto a signal event at the
+> simulation/reconstruction level. This tutorial's fast simulation chain
+> doesn't include beam-induced background overlay at all.
 
 
 ## What's next
