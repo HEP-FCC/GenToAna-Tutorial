@@ -10,6 +10,18 @@ Fast/Parametric **S**imulation (Delphes) to physics **Ana**lysis.
 - **FCC-hh (shorter, advanced transfer):** HH -> b b gamma gamma, reusing the FCC-ee
   material with less hand-holding, extending the physics objects covered to photons.
 
+## Getting started
+
+Clone the repository:
+
+```bash
+git clone https://github.com/HEP-FCC/GenToAna-Tutorial.git
+cd GenToAna-Tutorial
+```
+
+(If you plan to submit fixes, fork the repo first and clone your fork
+instead — see [CONTRIBUTING.md](CONTRIBUTING.md).)
+
 ## Structure
 
 Each stage has its own top-level directory, split by collider, with a
@@ -35,9 +47,8 @@ Analysis/
 
 ## Format
 
-Each section is introduced with brief slides, then students work through the
-markdown material directly in this repo (VSCodium + extensions recommended
-for an all-in-one setup). Students present their solutions; reference
+Students work through the markdown material directly in this repo
+(VSCodium + extensions recommended for an all-in-one setup). Reference
 solutions are also provided here for offline use.
 
 ## Branches

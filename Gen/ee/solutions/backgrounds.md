@@ -5,6 +5,13 @@ e+e- -> WW and e+e- -> ZZ (diboson) production. Unlike the signal, these
 don't need WHIZARD: Pythia8 can generate the hard process itself directly,
 so this is a single Pythia8 step with no LHE file involved at all.
 
+> **Note:** "Background" here means a different *physics process* (WW,
+> ZZ) that can mimic the mumuH signal in the final state — not the
+> beam-induced background familiar from FullSim studies, where machine-
+> related backgrounds are overlaid onto a signal event at the
+> simulation/reconstruction level. This tutorial's fast simulation chain
+> doesn't include beam-induced background overlay at all.
+
 Both reuse the signal's [`pythia_gen.py`](../pythia_gen.py) steering script
 as-is — only the card and output filename change, and both are overridable
 at the command line via `k4run`'s property overrides, so no file edits or
@@ -20,7 +27,7 @@ IDEA values used for the signal instead — so smearing is consistent across
 signal and backgrounds, rather than each card using its own values.
 
 ```bash
-mkdir -p test_whizard/WW && cd test_whizard/WW
+mkdir -p pythia_prod/WW && cd pythia_prod/WW
 cp ../../solutions/p8_ee_WW_ecm240.cmd ../../pythia_gen.py .
 k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=p8_ee_WW_ecm240.cmd --IOSvc.Output=WW.root
 ```
@@ -36,7 +43,7 @@ electroweak diboson process — dominated by ZZ away from resonance, but
 also including some gamma*/Z interference, hence the setting name):
 
 ```bash
-mkdir -p test_whizard/ZZ && cd test_whizard/ZZ
+mkdir -p pythia_prod/ZZ && cd pythia_prod/ZZ
 cp ../../solutions/p8_ee_ZZ_ecm240.cmd ../../pythia_gen.py .
 k4run pythia_gen.py --Pythia8.PythiaInterface.pythiacard=p8_ee_ZZ_ecm240.cmd --IOSvc.Output=ZZ.root
 ```
